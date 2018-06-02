@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# This script comes from https://github.com/sudar/Arduino-Makefile
+# and is licensed under the GNU Lesser General Public License version 2.1
 
 from __future__ import print_function
 import serial
@@ -106,7 +108,7 @@ if args.zero:
         bootloader_port = reset_ports[port_index]
 
     # print so that `tail -1` can be piped for bootloader port
-    print(bootloader_port)
+    #print(bootloader_port) # WILD REMOVE
 elif args.caterina:
     if args.verbose: print('Forcing reset using 1200bps open/close on port %s' % args.port[0])
     ser = serial.Serial(args.port[0], 57600)
