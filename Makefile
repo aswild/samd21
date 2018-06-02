@@ -15,7 +15,7 @@ OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 
-COMPORT      = /dev/ttyACM0
+COMPORT     ?= /dev/ttyACM0
 BOSSAC       = bossac
 BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
 RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
@@ -78,45 +78,62 @@ TARGET_ELF  = $(OBJDIR)/$(TARGET).elf
 TARGET_BIN  = $(OBJDIR)/$(TARGET).bin
 TARGET_HEX  = $(OBJDIR)/$(TARGET).hex
 
-all: $(TARGET_BIN) size
+V ?= 0
+_V_CC_0     = @echo "  CC      " $<;
+_V_CXX_0    = @echo "  CXX     " $<;
+_V_AS_0     = @echo "  AS      " $<;
+_V_LD_0     = @echo "  LD      " $@;
+_V_AR_0     = @echo "  AR      " $@;
+_V_BIN_0    = @echo "  BIN     " $@;
+_V_HEX_0    = @echo "  HEX     " $@;
+_V_SIZE_0   = @echo "Program Size:";
+_V_RESET_0  = @echo "  RESET   " $(COMPORT);
+_V_UPLOAD_0 = @echo "  UPLOAD  " $<;
+_V_CLEAN_0  = @echo "  CLEAN";
+
 .PHONY: all
+all: $(TARGET_BIN) .size_done
 
-size: $(TARGET_ELF) $(TARGET_HEX)
-	@echo ''
-	@$(SIZE) $^
+SIZE_CMD = $(_V_SIZE_$(V))$(SIZE) $(TARGET_HEX)
 .PHONY: size
+size: $(TARGET_HEX)
+	$(SIZE_CMD)
 
-upload: $(TARGET_BIN)
-	$(RESET_SCRIPT)
-	$(BOSSAC) $(BOSSAC_FLAGS) $<
+.size_done: $(TARGET_HEX) | $(TARGET_BIN)
+	$(SIZE_CMD)
+	@touch $@
+
 .PHONY: upload
+upload: $(TARGET_BIN) all
+	$(_V_RESET_$(V))$(RESET_SCRIPT)
+	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
 
-clean:
-	rm -rf $(OBJDIR)
 .PHONY: clean
+clean:
+	$(_V_CLEAN_$(V))rm -rf $(OBJDIR) .size_done
 
 $(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
-	$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--start-group $(CORELIB) $(LIBS) -Wl,--end-group
+	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--start-group $(CORELIB) $(LIBS) -Wl,--end-group
 
 $(TARGET_BIN): $(TARGET_ELF)
-	$(OBJCOPY) -O binary $< $@
+	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
 
 $(TARGET_HEX): $(TARGET_ELF)
-	$(OBJCOPY) -O ihex $< $@
+	$(_V_HEX_$(V))$(OBJCOPY) -O ihex $< $@
 
 $(OBJDIR):
 	@mkdir -p $@
 
 $(OBJDIR)/%.o: %.c | $(OBJDIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(_V_CC_$(V))$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$(_V_CXX_$(V))$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: %.S | $(OBJDIR)
-	$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
+	$(_V_AS_$(V))$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
 
 $(CORELIB): $(CORE_OBJS)
-	$(AR) rcs $@ $^
+	$(_V_AR_$(V))$(AR) rcs $@ $^
 
 -include $(wildcard $(OBJDIR)/*.d)
