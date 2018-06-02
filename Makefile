@@ -26,18 +26,18 @@ USER_ASFLAGS    := $(ASFLAGS)
 USER_LDFLAGS    := $(LDFLAGS)
 USER_LIBS       := $(LIBS)
 
-CPPFLAGS    = -MMD -D__SAMD21G18A__ -DF_CPU=48000000L -DUSBCON -DMD
-CPPFLAGS   += -DARDUINO=185 -DARDUINO_ARCH_SAMD
-CPPFLAGS   += -DUSB_PRODUCT='"SFE SAMD21"' -DUSB_MANUFACTURER='"SparkFun"' -DUSB_VID=0x1B4F -DUSB_PID=0x8D21
+CPPFLAGS    = -D__SAMD21G18A__ -DF_CPU=48000000L -DUSBCON
+CPPFLAGS   += -DUSB_MANUFACTURER='"SparkFun"' -DUSB_PRODUCT='"SFE SAMD21"' -DUSB_VID=0x1B4F -DUSB_PID=0x8D21
 CPPFLAGS   += -I$(COREDIR) -I$(COREDIR)/variant -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
+CPPFLAGS   += -MMD -MP
 
 # used everywhere
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb
 OPTFLAGS    = -Os
 
-# common for CFLAGS and CXXFLAGS
-CCXXFLAGS   = $(CPUFLAGS) $(OPTFLAGS) -Wall -Wextra -Wno-expansion-to-defined
-CCXXFLAGS  += -fno-exceptions -ffunction-sections -fdata-sections -fno-devirtualize
+# used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
+CCXXFLAGS   = $(CPUFLAGS) $(OPTFLAGS) -g -Wall -Wextra -Wno-expansion-to-defined
+CCXXFLAGS  += -fno-exceptions -ffunction-sections -fdata-sections
 
 CFLAGS      = $(CCXXFLAGS) -std=gnu11
 CFLAGS     += $(USER_CFLAGS)
@@ -53,11 +53,11 @@ LDFLAGS     = $(CPUFLAGS) $(OPTFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=n
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
 LDFLAGS    += -Wl,-Map=$(OBJDIR)/$(TARGET).map
-LDFLAGS    += -L$(CMSIS_DIR)
+LDFLAGS    += -L$(OBJDIR) -L$(CMSIS_DIR)
 LDFLAGS    += $(USER_LDFLAGS)
 
 CORELIB     = $(OBJDIR)/libcore.a
-LIBS        = -larm_cortexM0l_math -lm $(CORELIB)
+LIBS        = -lcore -lm -larm_cortexM0l_math
 LIBS       += $(USER_LIBS)
 
 CORE_SRC_DIRS = $(COREDIR) $(COREDIR)/USB $(COREDIR)/variant
@@ -113,7 +113,7 @@ clean:
 	$(_V_CLEAN_$(V))rm -rf $(OBJDIR) .size_done
 
 $(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
-	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--start-group $(CORELIB) $(LIBS) -Wl,--end-group
+	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
 
 $(TARGET_BIN): $(TARGET_ELF)
 	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
