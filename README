@@ -1,0 +1,56 @@
+Makefile and library for the SparkFun samd21 Mini breakout board
+----------------------------------------------------------------
+
+I only have one Arduino board, so why have tons of dependencies and generic
+build scripts for tons of targets?
+
+I started with the Arduino IDE to get the SAMD boards and SparkFun board
+definitions and the Arduino-Makefile project, then ripped out only the parts
+I need and dumped them into my own Makefile.
+
+COMPONENTS:
+
+  * Arduino-Makefile
+    - https://github.com/sudar/Arduino-Makefile
+    - Ran this makefile to see how the toolchains were called and what was
+      compiled so I could write my own makefile
+    - The ard-reset-arduino python script is copied directly from that repo
+    - This project is great, but too automagic for my tastes and too complex to
+      easily customize
+
+  * SparkFun-SAMD-core
+    - SparkFun SAMD Arduino core
+    - https://github.com/sparkfun/Arduino_Boards
+    - Version 1.4.0, I copied the files form ~/.arduino15 rather than directly
+      importing from the git repo
+    - Currently have only the core and variant files, might need to grab the
+      libraries and more later on
+
+  * CMSIS
+    - ARM CMSIS 5.3.0
+    - https://github.com/ARM-software/CMSIS_5
+    - just the Include directory, and Lib/GCC/libarm_cortexM0l_math.a
+
+  * CMSIS-Atmel
+    - https://github.com/arduino/ArduinoModule-CMSIS-Atmel
+    - The Atmel (Microchip) download link is broken, so I used the Arduino
+      module from github
+    - Version 1.2.0
+    - Just the files I need from the CMSIS-Atmel/CMSIS/Device/ATMEL dir:
+      sam.h, samd.h, samd21/
+
+ARCH LINUX PACKAGES:
+  * arm-none-eabi-gcc       8.1.0-1
+  * arm-none-eabi-binutils  2.30-1
+  * arm-none-eabi-newlib    3.0.0.20180226-2
+  * bossa (aur)             1.8-1
+    - the internet says that Arduino forked bossa and the upstream version
+      doesn't work, but the AUR package worked just fine for me
+
+DEVIATIONS:
+  * The Arduino IDE ships with GCC 4.8, which is really dang old. There's open
+    github issues to updated it, but they haven't been acted on.
+  * Arduino-Makefile enables LTO for GCC >= 4.9, but LTO doesn't actually work.
+    It compiles just fine but the program doesn't run when flashed to the board.
+    Without LTO, GCC 8.1 works just fine it seems.
+  * I'll fix a couple compiler warnings in the Arduino and CMSIS code
