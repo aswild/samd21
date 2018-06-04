@@ -1,6 +1,6 @@
-TARGET = blinky
+TARGET = sketch
 
-TARGET_OBJS = blinky.o
+TARGET_OBJS = sketch.o
 
 OBJDIR      = obj
 COREDIR     = SparkFun-SAMD-core
