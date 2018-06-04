@@ -32,24 +32,23 @@ CPPFLAGS   += -I$(COREDIR) -I$(COREDIR)/variant -I$(CMSIS_DIR)/Include -I$(SAM_D
 CPPFLAGS   += -MMD -MP
 
 # used everywhere
-CPUFLAGS    = -mcpu=cortex-m0plus -mthumb
-OPTFLAGS    = -Os
+CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
 
 # used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
-CCXXFLAGS   = $(CPUFLAGS) $(OPTFLAGS) -g -Wall -Wextra -Wno-expansion-to-defined
+CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
 CCXXFLAGS  += -fno-exceptions -ffunction-sections -fdata-sections
 
 CFLAGS      = $(CCXXFLAGS) -std=gnu11
 CFLAGS     += $(USER_CFLAGS)
 
-CXXFLAGS    = $(CCXXFLAGS) -std=gnu++11 -fno-rtti -fno-threadsafe-statics -fpermissive
+CXXFLAGS    = $(CCXXFLAGS) -std=gnu++11 -fno-rtti -fno-threadsafe-statics
 CXXFLAGS   += $(USER_CXXFLAGS)
 
 ASFLAGS     = $(CCXXFLAGS) -x assembler-with-cpp
 ASFLAGS    += $(USER_ASFLAGS)
 
 LDSCRIPT    = $(COREDIR)/variant/linker_scripts/gcc/flash_with_bootloader.ld
-LDFLAGS     = $(CPUFLAGS) $(OPTFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
 LDFLAGS    += -Wl,-Map=$(OBJDIR)/$(TARGET).map
@@ -94,7 +93,7 @@ _V_CLEAN_0  = @echo "  CLEAN";
 .PHONY: all
 all: $(TARGET_BIN) .size_done
 
-SIZE_CMD = $(_V_SIZE_$(V))$(SIZE) $(TARGET_HEX)
+SIZE_CMD = $(_V_SIZE_$(V))$(SIZE) $(TARGET_ELF) $(TARGET_HEX)
 .PHONY: size
 size: $(TARGET_HEX)
 	$(SIZE_CMD)
