@@ -18,7 +18,7 @@ COMPONENTS:
     - This project is great, but too automagic for my tastes and too complex to
       easily customize
 
-  * SparkFun-SAMD-core
+  * lib/core
     - SparkFun SAMD Arduino core
     - https://github.com/sparkfun/Arduino_Boards
     - Version 1.4.0, I copied the files form ~/.arduino15 rather than directly
@@ -26,12 +26,12 @@ COMPONENTS:
     - Currently have only the core and variant files, might need to grab the
       libraries and more later on
 
-  * CMSIS
+  * lib/CMSIS
     - ARM CMSIS 5.3.0
     - https://github.com/ARM-software/CMSIS_5
     - just the Include directory, and Lib/GCC/libarm_cortexM0l_math.a
 
-  * CMSIS-Atmel
+  * lib/CMSIS-Atmel
     - https://github.com/arduino/ArduinoModule-CMSIS-Atmel
     - The Atmel (Microchip) download link is broken, so I used the Arduino
       module from github

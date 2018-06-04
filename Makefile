@@ -1,12 +1,28 @@
+# Application Configuration
 TARGET = blinky
-
 TARGET_OBJS = blinky.o
 
+# Directory Configuration
 OBJDIR      = obj
-COREDIR     = SparkFun-SAMD-core
-CMSIS_DIR   = CMSIS
-SAM_DIR     = CMSIS-Atmel
+CORE        = core
 
+# all these directories will be used as CPP include paths, and
+# all c/cpp/S sources will be compiled into libcore
+LIBRARIES   = variant $(CORE) $(CORE)/USB
+
+CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
+COREINCS    = $(addprefix -I,$(CORESRCDIRS))
+
+VARIANT_DIR = lib/variant
+CMSIS_DIR   = lib/CMSIS
+SAM_DIR     = lib/CMSIS-Atmel
+
+COMPORT     ?= /dev/ttyACM0
+BOSSAC       = bossac
+BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
+RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
+
+# Tools Configuration
 TOOLCHAIN_BIN ?=
 CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
 CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
@@ -14,11 +30,6 @@ AR      = $(TOOLCHAIN_BIN)arm-none-eabi-ar
 OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
-
-COMPORT     ?= /dev/ttyACM0
-BOSSAC       = bossac
-BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
-RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
 
 USER_CFLAGS     := $(CFLAGS)
 USER_CXXFLAGS   := $(CXXFLAGS)
@@ -28,7 +39,7 @@ USER_LIBS       := $(LIBS)
 
 CPPFLAGS    = -D__SAMD21G18A__ -DF_CPU=48000000L -DUSBCON
 CPPFLAGS   += -DUSB_MANUFACTURER='"SparkFun"' -DUSB_PRODUCT='"SFE SAMD21"' -DUSB_VID=0x1B4F -DUSB_PID=0x8D21
-CPPFLAGS   += -I$(COREDIR) -I$(COREDIR)/variant -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
+CPPFLAGS   += $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 CPPFLAGS   += -MMD -MP
 
 # used everywhere
@@ -47,7 +58,7 @@ CXXFLAGS   += $(USER_CXXFLAGS)
 ASFLAGS     = $(CCXXFLAGS) -x assembler-with-cpp
 ASFLAGS    += $(USER_ASFLAGS)
 
-LDSCRIPT    = $(COREDIR)/variant/linker_scripts/gcc/flash_with_bootloader.ld
+LDSCRIPT    = $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
 LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
@@ -59,14 +70,13 @@ CORELIB     = $(OBJDIR)/libcore.a
 LIBS        = -lcore -lm -larm_cortexM0l_math
 LIBS       += $(USER_LIBS)
 
-CORE_SRC_DIRS = $(COREDIR) $(COREDIR)/USB $(COREDIR)/variant
-vpath %.c   $(CORE_SRC_DIRS)
-vpath %.cpp $(CORE_SRC_DIRS)
-vpath %.S   $(CORE_SRC_DIRS)
+vpath %.c   $(CORESRCDIRS)
+vpath %.cpp $(CORESRCDIRS)
+vpath %.S   $(CORESRCDIRS)
 
-CORE_CC_SRC  = $(foreach dir,$(CORE_SRC_DIRS),$(notdir $(wildcard $(dir)/*.c)))
-CORE_CXX_SRC = $(foreach dir,$(CORE_SRC_DIRS),$(notdir $(wildcard $(dir)/*.cpp)))
-CORE_AS_SRC  = $(foreach dir,$(CORE_SRC_DIRS),$(notdir $(wildcard $(dir)/*.S)))
+CORE_CC_SRC  = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.c)))
+CORE_CXX_SRC = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.cpp)))
+CORE_AS_SRC  = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.S)))
 
 CORE_OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(CORE_CXX_SRC)) \
             $(patsubst %.c,$(OBJDIR)/%.o,$(CORE_CC_SRC)) \
