@@ -813,6 +813,7 @@ bool USBDeviceClass::handleStandardSetup(USBSetup &setup)
 			sendZlp(0);
 			return true;
 		}
+		return true;
 
 	case SET_ADDRESS:
 		setAddress(setup.wValueL);

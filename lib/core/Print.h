@@ -86,6 +86,8 @@ class Print
     size_t println(const Printable&);
     size_t println(void);
 
+    size_t printf(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+
     virtual void flush() { /* Empty implementation for backward compatibility */ }
 };
 

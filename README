@@ -57,3 +57,4 @@ DEVIATIONS:
     It compiles just fine but the program doesn't run when flashed to the board.
     Without LTO, GCC 8.1 works just fine it seems.
   * fix compiler warnings in the Arduino and CMSIS code
+  * implement a printf method for the Print class, which makes serial use way nicer
