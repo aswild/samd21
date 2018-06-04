@@ -45,8 +45,16 @@ void loop(void)
             SerialUSB.print("\r\n");
             break;
         }
-        cmd += c;
-        SerialUSB.write(c);
+        else if (c == '\b')
+        {
+            cmd.remove(cmd.length()-1, 1);
+            SerialUSB.print("\b \b");
+        }
+        else
+        {
+            cmd += c;
+            SerialUSB.write(c);
+        }
     }
     if (cmd.length())
     {
