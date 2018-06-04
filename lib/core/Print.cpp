@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <math.h>
 #include "Arduino.h"
@@ -187,43 +186,6 @@ size_t Print::println(const Printable& x)
   return n;
 }
 
-size_t Print::printf(const char *fmt, ...)
-{
-  static char *buf = NULL;
-  static size_t bufsize = 0;
-
-  va_list args, args2;
-  size_t count;
-
-  if (!buf)
-  {
-    bufsize = 128;
-    buf = (char*)malloc(bufsize);
-    if (!buf)
-      return 0;
-  }
-
-  va_start(args, fmt);
-  va_copy(args2, args);
-  count = vsnprintf(buf, bufsize, fmt, args);
-  va_end(args);
-
-  if (count >= bufsize)
-  {
-    bufsize = ((bufsize*2) > (count+1)) ? (bufsize*2) : (count+1);
-    buf = (char*)realloc(buf, bufsize);
-    if (!buf)
-      return 0;
-
-    count = vsnprintf(buf, bufsize, fmt, args2);
-  }
-
-  for (const char *c = buf; *c; c++)
-    write(*c);
-
-  return count;
-}
-
 // Private Methods /////////////////////////////////////////////////////////////
 
 size_t Print::printNumber(unsigned long n, uint8_t base)
@@ -276,14 +238,14 @@ size_t Print::printFloat(double number, uint8_t digits)
 
   // Print the decimal point, but only if there are digits beyond
   if (digits > 0) {
-    n += print(".");
+    n += print('.');
   }
 
   // Extract digits from the remainder one at a time
   while (digits-- > 0)
   {
     remainder *= 10.0;
-    unsigned int toPrint = (unsigned int)remainder;
+    unsigned int toPrint = (unsigned int)(remainder);
     n += print(toPrint);
     remainder -= toPrint;
   }

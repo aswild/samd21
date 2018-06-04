@@ -323,31 +323,31 @@ public:
 			if (incoming == 0) {
 				last0 = usbd.epBank0ByteCount(ep);
 				if (last0 != 0) {
-				incoming = 1;
-				usbd.epBank0SetAddress(ep, const_cast<uint8_t *>(data1));
-				synchronized {
+					incoming = 1;
+					usbd.epBank0SetAddress(ep, const_cast<uint8_t *>(data1));
+					synchronized {
 						ready0 = true;
-					if (ready1) {
-						notify = true;
-						return;
+						if (ready1) {
+							notify = true;
+							return;
+						}
+						notify = false;
 					}
-					notify = false;
-				}
 				}
 			} else {
 				last1 = usbd.epBank0ByteCount(ep);
 				if (last1 != 0) {
-				incoming = 0;
-				usbd.epBank0SetAddress(ep, const_cast<uint8_t *>(data0));
-				synchronized {
-					ready1 = true;
-					if (ready0) {
-						notify = true;
-						return;
+					incoming = 0;
+					usbd.epBank0SetAddress(ep, const_cast<uint8_t *>(data0));
+					synchronized {
+						ready1 = true;
+						if (ready0) {
+							notify = true;
+							return;
+						}
+						notify = false;
 					}
-					notify = false;
 				}
-			}
 			}
 			release();
 		}
