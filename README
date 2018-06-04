@@ -18,20 +18,23 @@ COMPONENTS:
     - This project is great, but too automagic for my tastes and too complex to
       easily customize
 
-  * SparkFun-SAMD-core
-    - SparkFun SAMD Arduino core
-    - https://github.com/sparkfun/Arduino_Boards
-    - Version 1.4.0, I copied the files form ~/.arduino15 rather than directly
-      importing from the git repo
-    - Currently have only the core and variant files, might need to grab the
-      libraries and more later on
+  * lib/core
+    - Arduino SAMD core v1.6.18
+    - https://github.com/arduino/ArduinoCore-samd
+    - I didn't really see any specific differences in the SparkFun core vs the
+      "upstream" Arduino core, so I'll use the newer version here.
 
-  * CMSIS
+  * lib/variant
+    - SparkFun SAMD Arduino core v1.4.0
+    - https://github.com/sparkfun/Arduino_Boards
+    - variant files only
+
+  * lib/CMSIS
     - ARM CMSIS 5.3.0
     - https://github.com/ARM-software/CMSIS_5
     - just the Include directory, and Lib/GCC/libarm_cortexM0l_math.a
 
-  * CMSIS-Atmel
+  * lib/CMSIS-Atmel
     - https://github.com/arduino/ArduinoModule-CMSIS-Atmel
     - The Atmel (Microchip) download link is broken, so I used the Arduino
       module from github
@@ -53,4 +56,5 @@ DEVIATIONS:
   * Arduino-Makefile enables LTO for GCC >= 4.9, but LTO doesn't actually work.
     It compiles just fine but the program doesn't run when flashed to the board.
     Without LTO, GCC 8.1 works just fine it seems.
-  * I'll fix a couple compiler warnings in the Arduino and CMSIS code
+  * fix compiler warnings in the Arduino and CMSIS code
+  * implement a printf method for the Print class, which makes serial use way nicer
