@@ -43,7 +43,7 @@ CPPFLAGS   += $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 CPPFLAGS   += -MMD -MP
 
 # used everywhere
-CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
+CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os -flto
 
 # used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
 CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
@@ -141,6 +141,10 @@ $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 
 $(OBJDIR)/%.o: %.S | $(OBJDIR)
 	$(_V_AS_$(V))$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
+
+# Hack! Compiling CDC.cpp with LTO breaks the 1200 baud reset detection somehow
+$(OBJDIR)/CDC.o: CDC.cpp | $(OBJDIR)
+	$(_V_CXX_$(V))$(CXX) $(CPPFLAGS) $(filter-out -flto,$(CXXFLAGS)) -c -o $@ $<
 
 $(CORELIB): $(CORE_OBJS)
 	$(_V_AR_$(V))$(AR) rcs $@ $^
