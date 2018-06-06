@@ -34,12 +34,25 @@ extern const uint32_t __text_start__;
 #define APP_START 0x00002004
 #endif
 
+// rather than erasing the reset handler address of the application, which permanently
+// kills it, we can trick the bootloader into thinking the user double-tapped the reset
+// button by writing the same magic value to the same RAM location.
+// __bootloader_trap_reg may be provided by the linker script and must match BOOT_DOUBLE_TAP_ADDRESS
+// in the bootloader code. It's at the very top of RAM and should be 0x20007FFC.
+// If not provided by the linker script, this weak symbol definition will be used, default
+// to NULL, and we'll fall back to the old method of resetting to the bootloader by
+// erasing the reset handler address.
+extern uint32_t __attribute__((weak)) __bootloader_trap_reg;
+volatile uint32_t *bootloader_trap_reg = &__bootloader_trap_reg;
+
+// obviously, this magic value must match the bootloader code
+#define BOOTLOADER_TRAP_MAGIC 0x07738135
+
 static inline bool nvmReady(void) {
         return NVMCTRL->INTFLAG.reg & NVMCTRL_INTFLAG_READY;
 }
 
-__attribute__ ((long_call, section (".ramfunc")))
-static void banzai() {
+void banzai(void) {
 	// Disable all interrupts
 	__disable_irq();
 
@@ -50,14 +63,18 @@ static void banzai() {
 		goto reset;
 	}
 
-	// Erase application
-	while (!nvmReady())
-		;
-	NVMCTRL->STATUS.reg |= NVMCTRL_STATUS_MASK;
-	NVMCTRL->ADDR.reg  = (uintptr_t)&NVM_MEMORY[APP_START / 4];
-	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
-	while (!nvmReady())
-		;
+	if (bootloader_trap_reg != NULL) {
+		*bootloader_trap_reg = BOOTLOADER_TRAP_MAGIC;
+	} else {
+		// Erase application
+		while (!nvmReady())
+			;
+		NVMCTRL->STATUS.reg |= NVMCTRL_STATUS_MASK;
+		NVMCTRL->ADDR.reg  = (uintptr_t)&NVM_MEMORY[APP_START / 4];
+		NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
+		while (!nvmReady())
+			;
+	}
 
 reset:
 	// Reset the device

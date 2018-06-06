@@ -26,7 +26,7 @@
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x00000000+0x2000, LENGTH = 0x00040000-0x2000 /* First 8KB used by bootloader */
-  RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00008000
+  RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00008000-0x0004 /* 4 bytes used by bootloader to keep data between resets */
 }
 
 /* Linker script to place sections and symbol values. Should be used together
@@ -205,6 +205,10 @@ SECTIONS
 	PROVIDE(__stack = __StackTop);
 
 	__ram_end__ = ORIGIN(RAM) + LENGTH(RAM) -1 ;
+
+
+	/* write a magic value here to reset and stay in the bootloader */
+	PROVIDE(__bootloader_trap_reg = __ram_end__ + 1);
 
 	/* Check if data + heap + stack exceeds RAM limit */
 	ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
