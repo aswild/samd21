@@ -42,6 +42,10 @@ COMPONENTS:
     - Just the files I need from the CMSIS-Atmel/CMSIS/Device/ATMEL dir:
       sam.h, samd.h, samd21/
 
+  * bootloader
+    - https://github.com/sparkfun/SAMD21_Mini_Breakout
+    - Firmware directory of that repo
+
 ARCH LINUX PACKAGES:
   * arm-none-eabi-gcc       8.1.0-1
   * arm-none-eabi-binutils  2.30-1
