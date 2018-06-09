@@ -43,7 +43,10 @@ CPPFLAGS   += $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 CPPFLAGS   += -MMD -MP
 
 # used everywhere
-CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os -flto
+CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
+ifneq ($(LTO),0)
+CPUFLAGS   += -flto
+endif
 
 # used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
 CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
@@ -58,7 +61,7 @@ CXXFLAGS   += $(USER_CXXFLAGS)
 ASFLAGS     = $(CCXXFLAGS) -x assembler-with-cpp
 ASFLAGS    += $(USER_ASFLAGS)
 
-LDSCRIPT    = $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
+LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
 LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
