@@ -45,6 +45,7 @@ COMPONENTS:
   * bootloader
     - https://github.com/sparkfun/SAMD21_Mini_Breakout
     - Firmware directory of that repo
+    - I rewrote the Makefile to taste and fixed compiler errors so it builds
 
 ARCH LINUX PACKAGES:
   * arm-none-eabi-gcc       8.1.0-1
