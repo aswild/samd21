@@ -64,6 +64,7 @@ void __libc_init_array(void);
 void Dummy_Handler(void);
 
 /* Cortex-M0+ core handlers */
+void Reset_Handler           ( void ) __attribute__ ((used));
 void NMI_Handler             ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
 void HardFault_Handler       ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
 void SVC_Handler             ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
@@ -101,7 +102,7 @@ void PTC_Handler             ( void ) __attribute__ ((weak, alias("Dummy_Handler
 void I2S_Handler             ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
 
 /* Exception Table */
-__attribute__ ((section(".vectors")))
+__attribute__ ((used, section(".vectors")))
 const DeviceVectors exception_table = {
 
         /* Configure Initial Stack Pointer, using linker-generated symbols */
@@ -151,7 +152,8 @@ const DeviceVectors exception_table = {
         (void*) AC_Handler,             /* 24 Analog Comparators */
         (void*) DAC_Handler,            /* 25 Digital Analog Converter */
         (void*) PTC_Handler,            /* 26 Peripheral Touch Controller */
-        (void*) I2S_Handler             /* 27 Inter-IC Sound Interface */
+        (void*) I2S_Handler,            /* 27 Inter-IC Sound Interface */
+        (void*) (0UL),                  /* 28 Reserved */
 };
 
 /**

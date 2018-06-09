@@ -35,6 +35,8 @@
 #include "compiler.h"
 #include "cdc_enumerate.h"
 
+static void sam_ba_monitor_loop(void);
+
 const char RomBOOT_Version[] = SAM_BA_VERSION;
 //const char RomBOOT_ExtendedCapabilities[] = "[Arduino:XYZ]";
 const char RomBOOT_ExtendedCapabilities[] = "[SparkFun:XYZ]";
@@ -200,7 +202,7 @@ void put_uint32(uint32_t n) {
 	ptr_monitor_if->putdata(buff, 8);
 }
 
-void sam_ba_monitor_loop(void)
+static void sam_ba_monitor_loop(void)
 {
 	length = ptr_monitor_if->getdata(data, SIZEBUFMAX);
 	ptr = data;
@@ -352,13 +354,13 @@ void sam_ba_monitor_loop(void)
 
 				if (current_number == 0) {
 					// Set buffer address
-					src_buff_addr = ptr_data;
+					src_buff_addr = (uint32_t*)ptr_data;
 
 				} else {
 					// Write to flash
 					uint32_t size = current_number/4;
 					uint32_t *src_addr = src_buff_addr;
-					uint32_t *dst_addr = ptr_data;
+					uint32_t *dst_addr = (uint32_t*)ptr_data;
 
 					// Set automatic page write
 					NVMCTRL->CTRLB.bit.MANW = 0;

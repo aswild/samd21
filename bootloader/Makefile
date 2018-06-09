@@ -1,35 +1,91 @@
-# SAMD21 BA Bootloader - SparkFun Edit
-# Relies on toolchain installed via Arduino SAMD Board Support
-# Point the IDE path to your Arduino package installer location
-# Windows e.g.: C:/Users/user.name/AppData/Local/Arduino15
-# Mac e.g: /Users/userName/Library/Arduino15
+# Application Configuration
+TARGET = samd_sam_ba_sparkfun
 
-IDE_PATH=C:/Users/user.name/AppData/Local/Arduino15
-ARM_GCC_PATH=$(IDE_PATH)/packages/arduino/tools/arm-none-eabi-gcc/4.8.3-2014q1/bin
-CC=$(ARM_GCC_PATH)/arm-none-eabi-gcc
-CFLAGS=-mthumb -mcpu=cortex-m0plus -Wall -c -g -Os -w -std=gnu99 -ffunction-sections -fdata-sections -nostdlib --param max-inline-insns-single=500
-LDFLAGS=-mthumb -mcpu=cortex-m0plus -Wall -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all -Wl,--warn-common -Wl,--warn-section-align -Wl,--warn-unresolved-symbols
-BLD_EXTA_FLAGS=-D__SAMD21G18A__
-BUILD_PATH=build
-INCLUDES=-I$(IDE_PATH)/packages/arduino/tools/CMSIS/4.0.0-atmel/CMSIS/Include/ -I$(IDE_PATH)/packages/arduino/tools/CMSIS/4.0.0-atmel/Device/ATMEL/ -I./drivers/ -I./utils/ -I./utils/preprocessor/ -I./utils/interrupt 
-SOURCES=main.c sam_ba_monitor.c startup_samd21.c usart_sam_ba.c drivers/cdc_enumerate.c drivers/uart_driver.c utils/interrupt/interrupt_sam_nvic.c 
-OBJECTS=$(addprefix $(BUILD_PATH)/, $(SOURCES:.c=.o))
+SOURCES = main.c sam_ba_monitor.c startup_samd21.c usart_sam_ba.c \
+          drivers/cdc_enumerate.c drivers/uart_driver.c \
+          utils/interrupt/interrupt_sam_nvic.c
 
-NAME=samd21_sam_ba_sparkfun
-EXECUTABLE=$(NAME).bin
+CMSIS_DIR = ../lib/CMSIS
+INCLUDES = drivers utils utils/interrupt utils/preprocessor \
+           $(CMSIS_DIR)/Include ../lib/CMSIS-Atmel
 
-SLASH=/
-BSLASH=$(EMPTY)\$(EMPTY)
+# Tools Configuration
+TOOLCHAIN_BIN ?=
+CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
+CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
+AR      = $(TOOLCHAIN_BIN)arm-none-eabi-ar
+OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
+OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
+SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 
-all: $(SOURCES) $(EXECUTABLE)
-	
-$(EXECUTABLE): $(OBJECTS) 
-	$(CC) -L$(BUILD_PATH) $(LDFLAGS) -Os -Wl,--gc-sections -save-temps  -Tsamd21j18a_flash.ld -Wl,-Map,$(BUILD_PATH)/$(NAME).map --specs=nano.specs --specs=nosys.specs -o $(BUILD_PATH)/$(NAME).elf $(OBJECTS) -Wl,--start-group -lm -Wl,--end-group
-	$(ARM_GCC_PATH)/arm-none-eabi-objcopy -O binary $(BUILD_PATH)/$(NAME).elf $@
+CPPFLAGS    = -D__SAMD21G18A__ $(addprefix -I,$(INCLUDES))
+CPPFLAGS   += -MMD -MP
 
-$(BUILD_PATH)/%.o: %.c
-	-@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(BLD_EXTA_FLAGS) $(INCLUDES) $< -o $@
-	
+# used everywhere
+CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
+
+# used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
+CFLAGS      = -std=gnu99 $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
+CFLAGS     += -fno-exceptions -ffunction-sections -fdata-sections
+
+LDSCRIPT   ?= samd21g18a_flash.ld
+LDFLAGS     = $(CFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
+LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
+LDFLAGS    += -Wl,-Map=$(TARGET).map
+LDFLAGS    += -L$(CMSIS_DIR)
+
+LIBS        = -larm_cortexM0l_math
+
+TARGET_OBJ  = $(SOURCES:.c=.o)
+TARGET_ELF  = $(TARGET).elf
+TARGET_BIN  = $(TARGET).bin
+TARGET_HEX  = $(TARGET).hex
+
+V ?= 0
+_V_CC_0     = @echo "  CC      " $<;
+_V_CXX_0    = @echo "  CXX     " $<;
+_V_AS_0     = @echo "  AS      " $<;
+_V_LD_0     = @echo "  LD      " $@;
+_V_AR_0     = @echo "  AR      " $@;
+_V_BIN_0    = @echo "  BIN     " $@;
+_V_HEX_0    = @echo "  HEX     " $@;
+_V_SIZE_0   = @echo "Program Size:";
+_V_RESET_0  = @echo "  RESET   " $(COMPORT);
+_V_UPLOAD_0 = @echo "  UPLOAD  " $<;
+_V_CLEAN_0  = @echo "  CLEAN";
+
+.PHONY: all
+all: $(TARGET_BIN) .size_done
+
+SIZE_CMD = $(_V_SIZE_$(V))$(SIZE) $(TARGET_ELF) $(TARGET_HEX)
+.PHONY: size
+size: $(TARGET_HEX)
+	$(SIZE_CMD)
+
+.size_done: $(TARGET_HEX) | $(TARGET_BIN)
+	$(SIZE_CMD)
+	@touch $@
+
+.PHONY: upload
+upload: $(TARGET_BIN) all
+	$(_V_RESET_$(V))$(RESET_SCRIPT)
+	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
+
+.PHONY: clean
 clean:
-	del $(EXECUTABLE) $(subst /,\,$(OBJECTS)) $(subst /,\,$(BUILD_PATH)\//$(NAME).*)
+	$(_V_CLEAN_$(V))rm -rf $(TARGET_OBJ) $(TARGET_ELF) $(TARGET_BIN) $(TARGET_HEX) $(TARGET).map .size_done
+
+$(TARGET_ELF): $(TARGET_OBJ) $(LDSCRIPT)
+	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
+
+$(TARGET_BIN): $(TARGET_ELF)
+	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
+
+$(TARGET_HEX): $(TARGET_ELF)
+	$(_V_HEX_$(V))$(OBJCOPY) -O ihex $< $@
+
+%.o: %.c
+	$(_V_CC_$(V))$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+
+-include $(wildcard $(OBJDIR)/*.d)
