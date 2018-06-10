@@ -1,52 +1,34 @@
 #include "Arduino.h"
 #include "Reset.h"
+#include "DigitalIO.h"
 
-const int BLUE_LED = 13; // Blue "stat" LED on pin 13
-const int RX_LED = PIN_LED_RXL; // RX LED on pin 25, we use the predefined PIN_LED_RXL to make sure
-const int TX_LED = PIN_LED_TXL; // TX LED on pin 26, we use the predefined PIN_LED_TXL to make sure
+DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
+DigitalOut tx_led(PIN_LED_TXL, 0); // TX LED on pin 26, we use the predefined PIN_LED_TXL to make sure
+DigitalOut rx_led(PIN_LED_RXL, 1); // RX LED on pin 25, we use the predefined PIN_LED_RXL to make sure
+DigitalOut p11(11, 0);
 
-const int PB = 10;
+DigitalIn  button(10, INPUT_PULLUP);
 
-void setup() 
+void setup()
 {
-    pinMode(BLUE_LED, OUTPUT);
-    pinMode(RX_LED, OUTPUT);
-    pinMode(TX_LED, OUTPUT);
-    pinMode(11, OUTPUT);
-    digitalWrite(11, LOW);
-
-    pinMode(PB, INPUT_PULLUP);
-
-    digitalWrite(RX_LED, HIGH);
-    digitalWrite(TX_LED, HIGH);
-    digitalWrite(BLUE_LED, LOW);
-
     //while (!SerialUSB);
     SerialUSB.printf("%s\r\n", "Hello World");
+    blue_led = 0;
 }
 
-void loop() 
+void loop()
 {
-    digitalWrite(BLUE_LED, LOW); // Blue LED off
+    rx_led = !rx_led;
+    tx_led = !tx_led;
 
-    digitalWrite(RX_LED, LOW); // RX LED on
-    delay(200);
-    digitalWrite(RX_LED, HIGH); // RX LED off
-    digitalWrite(TX_LED, LOW); // TX LED on
-    delay(200);
-    digitalWrite(TX_LED, HIGH); // TX LED off
-#if 0
-    digitalWrite(BLUE_LED, HIGH); // Blue LED on
-    delay(200);
-    digitalWrite(BLUE_LED, LOW); // Blue LED off
-#else
-    if (!digitalRead(PB))
+    if (!button)
     {
-        digitalWrite(RX_LED, HIGH);
-        digitalWrite(TX_LED, HIGH);
-        digitalWrite(11, HIGH);
+        rx_led = 1;
+        tx_led = 1;
+        p11 = 1;
         initiateReset(500);
         while(true);
     }
-#endif
+
+    delay(200);
 }
