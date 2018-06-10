@@ -16,6 +16,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#define _GNU_SOURCE // for vasprintf
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -189,39 +190,19 @@ size_t Print::println(const Printable& x)
 
 size_t Print::printf(const char *fmt, ...)
 {
-  static char *buf = NULL;
-  static size_t bufsize = 0;
-
-  va_list args, args2;
-  size_t count;
-
-  if (!buf)
-  {
-    bufsize = 128;
-    buf = (char*)malloc(bufsize);
-    if (!buf)
-      return 0;
-  }
+  char *str = NULL;
+  va_list args;
 
   va_start(args, fmt);
-  va_copy(args2, args);
-  count = vsnprintf(buf, bufsize, fmt, args);
+  int count = vasprintf(&str, fmt, args);
   va_end(args);
 
-  if (count >= bufsize)
-  {
-    bufsize = ((bufsize*2) > (count+1)) ? (bufsize*2) : (count+1);
-    buf = (char*)realloc(buf, bufsize);
-    if (!buf)
-      return 0;
+  if (count < 0)
+    return 0;
 
-    count = vsnprintf(buf, bufsize, fmt, args2);
-  }
-
-  for (const char *c = buf; *c; c++)
-    write(*c);
-
-  return count;
+  write(str, count);
+  free(str);
+  return (size_t)count;
 }
 
 // Private Methods /////////////////////////////////////////////////////////////
