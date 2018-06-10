@@ -24,6 +24,7 @@
 #include "Arduino.h"
 
 #include "Print.h"
+#include "printf.h"
 
 // Public Methods //////////////////////////////////////////////////////////////
 
@@ -187,6 +188,22 @@ size_t Print::println(const Printable& x)
   return n;
 }
 
+static void _printf_out(char c, void *arg)
+{
+  Print *p = static_cast<Print*>(arg);
+  p->write(c);
+}
+
+size_t Print::printf(const char *fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+  const int ret = vfctprintf(_printf_out, (void*)this, fmt, va);
+  va_end(va);
+  return (size_t)ret;
+}
+
+#if 0
 size_t Print::printf(const char *fmt, ...)
 {
   static char *buf = NULL;
@@ -223,6 +240,7 @@ size_t Print::printf(const char *fmt, ...)
 
   return count;
 }
+#endif
 
 // Private Methods /////////////////////////////////////////////////////////////
 
