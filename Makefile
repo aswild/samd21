@@ -26,7 +26,7 @@ RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
 TOOLCHAIN_BIN ?=
 CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
 CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
-AR      = $(TOOLCHAIN_BIN)arm-none-eabi-ar
+AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
 OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
@@ -62,7 +62,7 @@ ASFLAGS     = $(CCXXFLAGS) -x assembler-with-cpp
 ASFLAGS    += $(USER_ASFLAGS)
 
 LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
-LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LDFLAGS     = $(CPUFLAGS) -fuse-linker-plugin -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
 LDFLAGS    += -Wl,-Map=$(OBJDIR)/$(TARGET).map
