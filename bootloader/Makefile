@@ -18,6 +18,9 @@ OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 
+OPENOCD = openocd
+OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
+
 CPPFLAGS    = -D__SAMD21G18A__ $(addprefix -I,$(INCLUDES))
 CPPFLAGS   += -MMD -MP
 
@@ -38,6 +41,7 @@ LDFLAGS    += -L$(CMSIS_DIR)
 LIBS        = -larm_cortexM0l_math
 
 TARGET_OBJ  = $(SOURCES:.c=.o)
+DEPS        = $(TARGET_OBJ:.o=.d)
 TARGET_ELF  = $(TARGET).elf
 TARGET_BIN  = $(TARGET).bin
 TARGET_HEX  = $(TARGET).hex
@@ -69,12 +73,11 @@ size: $(TARGET_HEX)
 
 .PHONY: upload
 upload: $(TARGET_BIN) all
-	$(_V_RESET_$(V))$(RESET_SCRIPT)
-	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
+	$(_V_UPLOAD_$(V))$(OPENOCD) $(OPENOCD_CMD)
 
 .PHONY: clean
 clean:
-	$(_V_CLEAN_$(V))rm -rf $(TARGET_OBJ) $(TARGET_ELF) $(TARGET_BIN) $(TARGET_HEX) $(TARGET).map .size_done
+	$(_V_CLEAN_$(V))rm -f $(TARGET_OBJ) $(DEPS) $(TARGET_ELF) $(TARGET_BIN) $(TARGET_HEX) $(TARGET).map .size_done
 
 $(TARGET_ELF): $(TARGET_OBJ) $(LDSCRIPT)
 	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
@@ -88,4 +91,4 @@ $(TARGET_HEX): $(TARGET_ELF)
 %.o: %.c
 	$(_V_CC_$(V))$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
--include $(wildcard $(OBJDIR)/*.d)
+-include $(DEPS)
