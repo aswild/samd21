@@ -20,6 +20,9 @@ void setup()
     digitalWrite(RX_LED, HIGH);
     digitalWrite(TX_LED, HIGH);
     digitalWrite(BLUE_LED, LOW);
+
+    //while (!SerialUSB);
+    SerialUSB.printf("%s\r\n", "Hello World");
 }
 
 void loop() 
