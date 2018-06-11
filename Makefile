@@ -153,10 +153,6 @@ $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 $(OBJDIR)/%.o: %.S | $(OBJDIR)
 	$(_V_AS_$(V))$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
 
-# Hack! Compiling CDC.cpp with LTO breaks the 1200 baud reset detection somehow
-$(OBJDIR)/CDC.o: CDC.cpp | $(OBJDIR)
-	$(_V_CXX_$(V))$(CXX) $(CPPFLAGS) $(filter-out -flto,$(CXXFLAGS)) -c -o $@ $<
-
 $(CORELIB): $(CORE_OBJS)
 	$(_V_AR_$(V))$(AR) rcs $@ $^
 
