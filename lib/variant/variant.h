@@ -31,6 +31,7 @@
 
 /** Master clock frequency */
 #define VARIANT_MCK			  (48000000ul)
+#define F_CPU VARIANT_MCK
 
 /*----------------------------------------------------------------------------
  *        Headers
@@ -164,6 +165,11 @@ static const uint8_t SCL = PIN_WIRE_SCL;
 #define PIN_USB_HOST_ENABLE (27ul)
 #define PIN_USB_DM          (28ul)
 #define PIN_USB_DP          (29ul)
+
+#define USB_MANUFACTURER    "SparkFun"
+#define USB_PRODUCT         "SFE SAMD21"
+#define USB_VID             0x1B4F
+#define USB_PID             0x8D21
 
 /*
  * I2S Interfaces
