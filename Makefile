@@ -47,6 +47,8 @@ CPPFLAGS   += -MMD -MP
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
 ifneq ($(LTO),0)
 CPUFLAGS   += -flto
+else
+$(info >>> LTO is disabled!)
 endif
 
 # used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
