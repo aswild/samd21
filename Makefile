@@ -31,6 +31,7 @@ AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
 OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
+GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
 USER_CFLAGS     := $(CFLAGS)
 USER_CXXFLAGS   := $(CXXFLAGS)
@@ -126,6 +127,10 @@ upload: $(TARGET_BIN) all
 .PHONY: clean
 clean:
 	$(_V_CLEAN_$(V))rm -rf $(OBJDIR) .size_done
+
+.PHONY: gdb
+gdb: $(TARGET_ELF)
+	$(GDB) -q $(TARGET_ELF) -ex "target extended-remote :2331" -ex "load" -ex "mon reset"
 
 $(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
 	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
