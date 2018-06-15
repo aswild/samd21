@@ -19,9 +19,23 @@ CMSIS_DIR   = lib/CMSIS
 SAM_DIR     = lib/CMSIS-Atmel
 
 COMPORT     ?= /dev/ttyACM0
-BOSSAC       = bossac
+BOSSAC      ?= bossac
 BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
 RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
+
+# my bossa-git AUR package sets the version to the Arch pkgver, which is 1.8.rXX.gYYYYYYY since
+# there hasn't been a v1.9 tag yet, so figure out the version by checking for the availability
+# of the --arduino-erase option
+BOSSA_19 := $(shell $(BOSSAC) --help 2>/dev/null | grep -q -e '--arduino-erase' && echo y || echo n)
+ifeq ($(BOSSA_19),y)
+# use bossac to do the reset when possible.
+BOSSAC_FLAGS += --arduino-erase
+# BOSSA v1.8 hard-coded the flash starting address as 0x2000, so the command-line offset
+# must be zero (the default) or else the program would get written to 0x4000.
+# BOSSA v1.9 doesn't do that, so we must set the offset to 0x2000 or else the bootloader
+# will get overwritten, bricking the board.
+BOSSAC_FLAGS += --offset=0x2000
+endif
 
 # Tools Configuration
 TOOLCHAIN_BIN ?=
@@ -119,7 +133,9 @@ size: $(TARGET_HEX)
 
 .PHONY: upload
 upload: $(TARGET_BIN) all
+ifneq ($(BOSSA_19),y)
 	$(_V_RESET_$(V))$(RESET_SCRIPT)
+endif
 	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
 
 .PHONY: clean
