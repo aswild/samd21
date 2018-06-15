@@ -38,8 +38,8 @@
 static void sam_ba_monitor_loop(void);
 
 const char RomBOOT_Version[] = SAM_BA_VERSION;
-//const char RomBOOT_ExtendedCapabilities[] = "[Arduino:XYZ]";
-const char RomBOOT_ExtendedCapabilities[] = "[SparkFun:XYZ]";
+const char RomBOOT_ExtendedCapabilities[] = "[Arduino:XYZ]";
+//const char RomBOOT_ExtendedCapabilities[] = "[SparkFun:XYZ]";
 
 /* Provides one common interface to handle both USART and USB-CDC */
 typedef struct
