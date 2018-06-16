@@ -1,4 +1,10 @@
 /obj
-/.size_done
+.size_done
 
+*.o
+*.d
+*.bin
+*.elf
+*.hex
+*.map
 *.swp

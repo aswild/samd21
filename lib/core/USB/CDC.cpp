@@ -87,7 +87,7 @@ int CDC_GetInterface(uint8_t* interfaceNum)
 	return USBDevice.sendControl(&_cdcInterface,sizeof(_cdcInterface));
 }
 
-bool CDC_Setup(USBSetup& setup)
+bool __attribute__((used)) CDC_Setup(USBSetup& setup)
 {
 	uint8_t requestType = setup.bmRequestType;
 	uint8_t r = setup.bRequest;

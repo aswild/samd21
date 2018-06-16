@@ -9,6 +9,7 @@ CORE        = core
 # all these directories will be used as CPP include paths, and
 # all c/cpp/S sources will be compiled into libcore
 LIBRARIES   = variant $(CORE) $(CORE)/USB
+LIBRARIES  += DigitalIO Wire MPR121
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
 COREINCS    = $(addprefix -I,$(CORESRCDIRS))
@@ -18,18 +19,35 @@ CMSIS_DIR   = lib/CMSIS
 SAM_DIR     = lib/CMSIS-Atmel
 
 COMPORT     ?= /dev/ttyACM0
-BOSSAC       = bossac
+BOSSAC      ?= bossac
 BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
 RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
+
+# my bossa-git AUR package sets the version to the Arch pkgver, which is 1.8.rXX.gYYYYYYY since
+# there hasn't been a v1.9 tag yet, so figure out the version by checking for the availability
+# of the --arduino-erase option
+BOSSA_19 := $(shell $(BOSSAC) --help 2>/dev/null | grep -q -e '--arduino-erase' && echo y || echo n)
+ifeq ($(BOSSA_19),y)
+# we have auto-erase available
+BOSSAC_FLAGS := $(filter-out --erase,$(BOSSAC_FLAGS))
+# use bossac to do the reset when possible.
+BOSSAC_FLAGS += --arduino-erase
+# BOSSA v1.8 hard-coded the flash starting address as 0x2000, so the command-line offset
+# must be zero (the default) or else the program would get written to 0x4000.
+# BOSSA v1.9 doesn't do that, so we must set the offset to 0x2000 or else the bootloader
+# will get overwritten, bricking the board.
+BOSSAC_FLAGS += --offset=0x2000
+endif
 
 # Tools Configuration
 TOOLCHAIN_BIN ?=
 CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
 CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
-AR      = $(TOOLCHAIN_BIN)arm-none-eabi-ar
+AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
 OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
+GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
 USER_CFLAGS     := $(CFLAGS)
 USER_CXXFLAGS   := $(CXXFLAGS)
@@ -37,13 +55,16 @@ USER_ASFLAGS    := $(ASFLAGS)
 USER_LDFLAGS    := $(LDFLAGS)
 USER_LIBS       := $(LIBS)
 
-CPPFLAGS    = -D__SAMD21G18A__ -DF_CPU=48000000L -DUSBCON
-CPPFLAGS   += -DUSB_MANUFACTURER='"SparkFun"' -DUSB_PRODUCT='"SFE SAMD21"' -DUSB_VID=0x1B4F -DUSB_PID=0x8D21
-CPPFLAGS   += $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
+CPPFLAGS    = -D__SAMD21G18A__ -DUSBCON $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 CPPFLAGS   += -MMD -MP
 
 # used everywhere
-CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os -flto
+CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
+ifneq ($(LTO),0)
+CPUFLAGS   += -flto
+else
+$(info >>> LTO is disabled!)
+endif
 
 # used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
 CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
@@ -58,8 +79,8 @@ CXXFLAGS   += $(USER_CXXFLAGS)
 ASFLAGS     = $(CCXXFLAGS) -x assembler-with-cpp
 ASFLAGS    += $(USER_ASFLAGS)
 
-LDSCRIPT    = $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
-LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
+LDFLAGS     = $(CPUFLAGS) -fuse-linker-plugin -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
 LDFLAGS    += -Wl,-Map=$(OBJDIR)/$(TARGET).map
@@ -114,12 +135,18 @@ size: $(TARGET_HEX)
 
 .PHONY: upload
 upload: $(TARGET_BIN) all
+ifneq ($(BOSSA_19),y)
 	$(_V_RESET_$(V))$(RESET_SCRIPT)
+endif
 	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
 
 .PHONY: clean
 clean:
 	$(_V_CLEAN_$(V))rm -rf $(OBJDIR) .size_done
+
+.PHONY: gdb
+gdb: $(TARGET_ELF)
+	$(GDB) -q $(TARGET_ELF) -ex "target extended-remote :2331" -ex "load" -ex "mon reset"
 
 $(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
 	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
@@ -141,10 +168,6 @@ $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 
 $(OBJDIR)/%.o: %.S | $(OBJDIR)
 	$(_V_AS_$(V))$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
-
-# Hack! Compiling CDC.cpp with LTO breaks the 1200 baud reset detection somehow
-$(OBJDIR)/CDC.o: CDC.cpp | $(OBJDIR)
-	$(_V_CXX_$(V))$(CXX) $(CPPFLAGS) $(filter-out -flto,$(CXXFLAGS)) -c -o $@ $<
 
 $(CORELIB): $(CORE_OBJS)
 	$(_V_AR_$(V))$(AR) rcs $@ $^
