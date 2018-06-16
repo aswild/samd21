@@ -1,6 +1,6 @@
 # Application Configuration
-TARGET = blinky
-TARGET_OBJS = blinky.o
+TARGET = keypad
+TARGET_OBJS = keypad.o
 
 # Directory Configuration
 OBJDIR      = obj
