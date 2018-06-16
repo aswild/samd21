@@ -9,7 +9,7 @@ CORE        = core
 # all these directories will be used as CPP include paths, and
 # all c/cpp/S sources will be compiled into libcore
 LIBRARIES   = variant $(CORE) $(CORE)/USB
-LIBRARIES  += DigitalIO
+LIBRARIES  += DigitalIO Wire
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
 COREINCS    = $(addprefix -I,$(CORESRCDIRS))
