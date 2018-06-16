@@ -16,7 +16,7 @@ static const uint8_t irq_pin = 2;
 TwoWire i2c(&sercom2, 4, 3);
 MPR121 keypad(i2c);
 
-void keypad_irq(void)
+static void keypad_isr(void)
 {
     keypad_event = true;
     blue_led = 1;
@@ -32,7 +32,9 @@ void setup()
     pinPeripheral(4, PIO_SERCOM_ALT);
     pinPeripheral(3, PIO_SERCOM_ALT);
     keypad.init(false);
-    attachInterrupt(digitalPinToInterrupt(irq_pin), keypad_irq, FALLING);
+
+    pinMode(irq_pin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(irq_pin), keypad_isr, FALLING);
 
     blue_led = 0;
 }
