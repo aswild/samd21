@@ -44,13 +44,13 @@ public:
     // Real initialiser, takes the i2c address of the device.
     MPR121(TwoWire& _i2c, uint8_t address=ADD_VSS);
 
-    void init(void);
+    void init(bool i2cBegin=true);
 
     bool getProximityMode(void);
 
     void setProximityMode(bool mode);
 
-    uint8_t readTouchData(void);
+    uint16_t readTouchData(void);
 
     uint8_t read(uint8_t reg);
 
@@ -59,18 +59,25 @@ public:
 
     void setElectrodeThreshold(int electrodeId, uint8_t touchThreshold, uint8_t releaseThreshold);
 
+    inline uint8_t getAddress(void) { return address; }
+
 protected:
     // Configures the MPR with standard settings. This is permitted to be overwritten by sub-classes.
     void configureSettings(void);
 
 private:
     // The I2C bus instance.
-    TwoWire i2c;
+    TwoWire &i2c;
 
     // 7 bit i2c address of this mpr121
     uint8_t address;
 
 public:
+    // Touch Status
+    static const uint8_t ELE_ST0      = 0x00;
+    static const uint8_t ELE_ST1      = 0x01;
+    static const uint8_t ELE_ST1_MASK = 0x1F;
+
     // MPR121 Register Defines
     static const uint8_t MHD_R        = 0x2B;
     static const uint8_t NHD_R        = 0x2C;

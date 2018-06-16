@@ -29,10 +29,11 @@ MPR121::MPR121(TwoWire& _i2c, uint8_t _address) : i2c(_i2c), address(_address)
     // nothing to do besides initialize private vars
 }
 
-void MPR121::init(void)
+void MPR121::init(bool i2cBegin)
 {
-    // init the i2c
-    i2c.begin(address);
+    // the user may call i2c.begin() and configure pin mappings before calling this function
+    if (i2cBegin)
+        i2c.begin();
 
     // Configure the MPR121 settings to default
     configureSettings();
@@ -186,7 +187,9 @@ void MPR121::setProximityMode(bool mode)
     }
 }
 
-uint8_t MPR121::readTouchData(void)
+uint16_t MPR121::readTouchData(void)
 {
-    return this->read(0x00);
+    uint8_t lower = this->read(ELE_ST0);
+    uint8_t upper = this->read(ELE_ST1) & ELE_ST1_MASK;
+    return (upper << 8) | lower;
 }
