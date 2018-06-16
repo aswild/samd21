@@ -10,8 +10,17 @@ DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 //DigitalOut p11(11, 0);
 DigitalIn  button(10, INPUT_PULLUP);
 
+volatile bool keypad_event = false;
+static const uint8_t irq_pin = 2;
+
 TwoWire i2c(&sercom2, 4, 3);
 MPR121 keypad(i2c);
+
+void keypad_irq(void)
+{
+    keypad_event = true;
+    blue_led = 1;
+}
 
 void setup()
 {
@@ -23,21 +32,17 @@ void setup()
     pinPeripheral(4, PIO_SERCOM_ALT);
     pinPeripheral(3, PIO_SERCOM_ALT);
     keypad.init(false);
+    attachInterrupt(digitalPinToInterrupt(irq_pin), keypad_irq, FALLING);
 
     blue_led = 0;
 }
 
 void loop()
 {
-    static uint16_t data_last = 0xffff;
-    uint16_t data;
-
-    data = keypad.readTouchData();
-    if (data != data_last)
+    if (keypad_event)
     {
+        uint16_t data = keypad.readTouchData();
         SerialUSB.printf("%04x\n", data);
-        data_last = data;
+        blue_led = keypad_event = false;
     }
-
-    delay(50);
 }
