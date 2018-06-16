@@ -28,6 +28,8 @@ RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
 # of the --arduino-erase option
 BOSSA_19 := $(shell $(BOSSAC) --help 2>/dev/null | grep -q -e '--arduino-erase' && echo y || echo n)
 ifeq ($(BOSSA_19),y)
+# we have auto-erase available
+BOSSAC_FLAGS := $(filter-out --erase,$(BOSSAC_FLAGS))
 # use bossac to do the reset when possible.
 BOSSAC_FLAGS += --arduino-erase
 # BOSSA v1.8 hard-coded the flash starting address as 0x2000, so the command-line offset
