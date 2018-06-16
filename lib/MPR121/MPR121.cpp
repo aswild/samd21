@@ -143,6 +143,27 @@ uint8_t MPR121::read(uint8_t reg)
     return data;
 }
 
+size_t MPR121::readMany(uint8_t start, uint8_t *dataSet, size_t length)
+{
+    // set the register to read, no stop bit
+    i2c.beginTransmission(address);
+    i2c.write(start);
+    i2c.endTransmission(false);
+
+    // initiate read (SW buffered)
+    i2c.requestFrom(address, length);
+
+    // wait for response data
+    while (!i2c.available());
+
+    // read response (from SW buffer)
+    size_t i;
+    for (i = 0; i2c.available() && i < length; i++)
+        dataSet[i] = i2c.read();
+
+    return i;
+}
+
 size_t MPR121::write(uint8_t reg, uint8_t value)
 {
     // Start the command
@@ -189,7 +210,7 @@ void MPR121::setProximityMode(bool mode)
 
 uint16_t MPR121::readTouchData(void)
 {
-    uint8_t lower = this->read(ELE_ST0);
-    uint8_t upper = this->read(ELE_ST1) & ELE_ST1_MASK;
-    return (upper << 8) | lower;
+    uint8_t data[2] = {0};
+    readMany(ELE_ST0, data, 2);
+    return ((data[1] & ELE_ST1_MASK) << 8) | data[0];
 }

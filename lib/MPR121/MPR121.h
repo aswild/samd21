@@ -53,6 +53,7 @@ public:
     uint16_t readTouchData(void);
 
     uint8_t read(uint8_t reg);
+    size_t readMany(uint8_t start, uint8_t *dataSet, size_t length);
 
     size_t write(uint8_t reg, uint8_t value);
     size_t writeMany(uint8_t start, const uint8_t *dataSet, size_t length);
