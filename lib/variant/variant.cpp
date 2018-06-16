@@ -208,9 +208,12 @@ SERCOM sercom4( SERCOM4 ) ;
 SERCOM sercom5( SERCOM5 ) ;
 
 Uart Serial1( &sercom0, PIN_SERIAL1_RX, PIN_SERIAL1_TX, PAD_SERIAL1_RX, PAD_SERIAL1_TX ) ;
+void Serial1_IrqHook(void) __attribute__((weak));
 void SERCOM0_Handler()
 {
   Serial1.IrqHandler();
+  if (Serial1_IrqHook)
+      Serial1_IrqHook();
 }
 
 #if 0
