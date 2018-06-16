@@ -1,20 +1,22 @@
 #include "Arduino.h"
+#include "DigitalIO.h"
 
-#define BLED 13
-#define RN52_GPIO9 17
+DigitalOut blue_led(13, HIGH);
+DigitalOut gpio9(17, HIGH);
+
+void Serial1_IrqHook(void)
+{
+    while (Serial1.available())
+        SerialUSB.write(Serial1.read());
+}
 
 void setup(void)
 {
     SerialUSB.begin(115200);
     Serial1.begin(115200);
 
-    pinMode(BLED, OUTPUT);
-    digitalWrite(BLED, HIGH);
-
-    pinMode(RN52_GPIO9, OUTPUT);
-    digitalWrite(RN52_GPIO9, HIGH);
     delay(100);
-    digitalWrite(RN52_GPIO9, LOW);
+    gpio9 = 0;
 
     Serial1.flush();
     delay(100);
@@ -23,16 +25,13 @@ void setup(void)
 
     while (!SerialUSB); // wait for USB host to open the port
     SerialUSB.printf("\r\nSAMD%d Mini!\r\n", 21);
-    digitalWrite(BLED, LOW);
+    blue_led = 0;
 }
 
 void loop(void)
 {
     while (Serial1.available())
-    {
-        char c = Serial1.read();
-        SerialUSB.write(c);
-    }
+        SerialUSB.write(Serial1.read());
 
     SerialUSB.write("> ");
     String cmd = "";
