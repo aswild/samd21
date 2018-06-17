@@ -26,7 +26,9 @@ extern "C" {
 
 #include "Wire.h"
 
-TwoWire::TwoWire(SERCOM * s, uint8_t pinSDA, uint8_t pinSCL)
+#define WIRE_BUFFER_SIZE 256
+
+TwoWire::TwoWire(SERCOM * s, uint8_t pinSDA, uint8_t pinSCL) : rxBuffer(WIRE_BUFFER_SIZE), txBuffer(WIRE_BUFFER_SIZE)
 {
   this->sercom = s;
   this->_uc_pinSDA=pinSDA;
