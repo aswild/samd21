@@ -31,6 +31,9 @@ class RingBuffer
 {
   public:
     RingBuffer(void);
+    RingBuffer(int _size);
+    ~RingBuffer(void);
+    int getSize(void);
     void store_char(uint8_t c);
     void clear(void);
     int read_char(void);
@@ -40,7 +43,8 @@ class RingBuffer
     bool isFull(void);
 
   private:
-    uint8_t _aucBuffer[SERIAL_BUFFER_SIZE];
+    uint8_t *_aucBuffer;
+    int size;
     volatile int _iHead;
     volatile int _iTail;
 

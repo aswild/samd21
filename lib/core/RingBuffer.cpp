@@ -17,14 +17,26 @@
 */
 
 #include <cstdint>
-#include <cstring>
+#include <cstdlib>
 
 #include "RingBuffer.h"
 
-RingBuffer::RingBuffer(void)
+RingBuffer::RingBuffer(void) : RingBuffer(SERIAL_BUFFER_SIZE) { }
+
+RingBuffer::RingBuffer(int _size) : size(_size)
 {
-  memset(_aucBuffer, 0, SERIAL_BUFFER_SIZE);
+  _aucBuffer = static_cast<uint8_t*>(calloc(size, 1));
   clear();
+}
+
+RingBuffer::~RingBuffer(void)
+{
+  free(_aucBuffer);
+}
+
+int RingBuffer::getSize(void)
+{
+  return size;
 }
 
 void RingBuffer::store_char(uint8_t c)
@@ -64,7 +76,7 @@ int RingBuffer::available(void)
   int delta = _iHead - _iTail;
 
   if(delta < 0)
-    return SERIAL_BUFFER_SIZE + delta;
+    return size + delta;
   else
     return delta;
 }
@@ -72,7 +84,7 @@ int RingBuffer::available(void)
 int RingBuffer::availableForStore(void)
 {
   if (_iHead >= _iTail)
-    return SERIAL_BUFFER_SIZE - 1 - _iHead + _iTail;
+    return size - 1 - _iHead + _iTail;
   else
     return _iTail - _iHead - 1;
 }
@@ -87,7 +99,7 @@ int RingBuffer::peek(void)
 
 int RingBuffer::nextIndex(int index)
 {
-  return (uint32_t)(index + 1) % SERIAL_BUFFER_SIZE;
+  return (uint32_t)(index + 1) % size;
 }
 
 bool RingBuffer::isFull(void)
