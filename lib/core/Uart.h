@@ -44,6 +44,9 @@ class Uart : public HardwareSerial
 
     operator bool() { return true; }
 
+    void setRxBufferSize(int size);
+    void setTxBufferSize(int size);
+
   private:
     SERCOM *sercom;
     RingBuffer rxBuffer;

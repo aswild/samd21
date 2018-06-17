@@ -184,6 +184,16 @@ size_t Uart::write(const uint8_t data)
   return 1;
 }
 
+void Uart::setRxBufferSize(int size)
+{
+  rxBuffer.resize(size);
+}
+
+void Uart::setTxBufferSize(int size)
+{
+  txBuffer.resize(size);
+}
+
 SercomNumberStopBit Uart::extractNbStopBit(uint16_t config)
 {
   switch(config & HARDSER_STOP_BIT_MASK)
