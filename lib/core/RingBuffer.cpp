@@ -21,10 +21,25 @@
 
 #include "RingBuffer.h"
 
+// round up to the next power of 2
+// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+static inline uint32_t next_pow2(uint32_t v)
+{
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
+}
+
 RingBuffer::RingBuffer(void) : RingBuffer(SERIAL_BUFFER_SIZE) { }
 
-RingBuffer::RingBuffer(int _size) : size(_size)
+RingBuffer::RingBuffer(uint32_t _size)
 {
+  size = pow2_roundup(_size);
   _aucBuffer = static_cast<uint8_t*>(calloc(size, 1));
   clear();
 }
@@ -34,7 +49,7 @@ RingBuffer::~RingBuffer(void)
   free(_aucBuffer);
 }
 
-int RingBuffer::getSize(void)
+uint32_t RingBuffer::getSize(void)
 {
   return size;
 }
@@ -99,7 +114,8 @@ int RingBuffer::peek(void)
 
 int RingBuffer::nextIndex(int index)
 {
-  return (uint32_t)(index + 1) % size;
+  // use & for modulus because size is locked to a power of 2
+  return (uint32_t)(index + 1) & (size - 1);
 }
 
 bool RingBuffer::isFull(void)
