@@ -21,6 +21,15 @@
 
 #include "RingBuffer.h"
 
+// grab sam.h for IRQ functions,
+// conditional on __thumb__ for testing RingBuffer on a PC
+#ifdef __thumb__
+#include "sam.h"
+#else
+#define __disable_irq() do {} while(0)
+#define __enable_irq()  do {} while(0)
+#endif
+
 // round up to the next power of 2
 // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 static inline uint32_t next_pow2(uint32_t v)
@@ -39,7 +48,7 @@ RingBuffer::RingBuffer(void) : RingBuffer(SERIAL_BUFFER_SIZE) { }
 
 RingBuffer::RingBuffer(uint32_t _size)
 {
-  size = pow2_roundup(_size);
+  size = next_pow2(_size);
   _aucBuffer = static_cast<uint8_t*>(calloc(size, 1));
   clear();
 }
@@ -52,6 +61,40 @@ RingBuffer::~RingBuffer(void)
 uint32_t RingBuffer::getSize(void)
 {
   return size;
+}
+
+void RingBuffer::resize(uint32_t _newsize)
+{
+  uint32_t newsize = next_pow2(_newsize);
+  if (newsize == size)
+    return;
+
+  uint8_t *oldBuffer = _aucBuffer;
+  uint8_t *newBuffer = static_cast<uint8_t*>(calloc(newsize, 1));
+  if (newBuffer == NULL)
+    return;
+
+  // data copying needs to be atomic
+  __disable_irq();
+
+  int i = 0;
+  while ((uint32_t)i < newsize && available())
+    newBuffer[i++] = read_char();
+
+  if ((uint32_t)i == newsize) {
+    // last byte gets dropped because the usable capacity is one less than size
+    _iHead = newsize - 1;
+  } else {
+    _iHead = i;
+  }
+
+  _iTail = 0;
+  size = newsize;
+  _aucBuffer = newBuffer;
+
+  __enable_irq();
+
+  free(oldBuffer);
 }
 
 void RingBuffer::store_char(uint8_t c)

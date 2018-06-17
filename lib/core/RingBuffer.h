@@ -34,6 +34,7 @@ class RingBuffer
     RingBuffer(uint32_t _size);
     ~RingBuffer(void);
     uint32_t getSize(void);
+    void resize(uint32_t newsize);
     void store_char(uint8_t c);
     void clear(void);
     int read_char(void);
@@ -45,6 +46,7 @@ class RingBuffer
   private:
     uint8_t *_aucBuffer;
     uint32_t size;
+  public:
     volatile int _iHead;
     volatile int _iTail;
 
