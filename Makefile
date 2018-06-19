@@ -1,6 +1,6 @@
 # Application Configuration
-TARGET = keypad
-TARGET_OBJS = keypad.o
+TARGET = neostrip-demo
+TARGET_OBJS = sketch.o
 
 # Directory Configuration
 OBJDIR      = obj
@@ -9,7 +9,7 @@ CORE        = core
 # all these directories will be used as CPP include paths, and
 # all c/cpp/S sources will be compiled into libcore
 LIBRARIES   = variant $(CORE) $(CORE)/USB
-LIBRARIES  += DigitalIO MPR121 SPI Wire
+LIBRARIES  += DigitalIO MPR121 Neostrip SPI Wire
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
 COREINCS    = $(addprefix -I,$(CORESRCDIRS))
