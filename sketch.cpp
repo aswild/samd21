@@ -4,15 +4,17 @@
 DigitalOut blue_led(13, HIGH);
 DigitalOut gpio9(17, HIGH);
 
+#if 0
 void Serial1_IrqHook(void)
 {
     while (Serial1.available())
         SerialUSB.write(Serial1.read());
 }
+#endif
 
 void setup(void)
 {
-    SerialUSB.begin(115200);
+    Serial1.setRxBufferSize(256);
     Serial1.begin(115200);
 
     delay(100);
@@ -23,6 +25,7 @@ void setup(void)
     while (Serial1.available())
         Serial1.read();
 
+    SerialUSB.begin(115200);
     while (!SerialUSB); // wait for USB host to open the port
     SerialUSB.printf("\r\nSAMD%d Mini!\r\n", 21);
     blue_led = 0;
@@ -31,7 +34,11 @@ void setup(void)
 void loop(void)
 {
     while (Serial1.available())
-        SerialUSB.write(Serial1.read());
+    {
+        while (Serial1.available())
+            SerialUSB.write(Serial1.read());
+        delay(10);
+    }
 
     SerialUSB.write("> ");
     String cmd = "";
@@ -59,6 +66,6 @@ void loop(void)
     {
         //SerialUSB.printf("Send command: '%s'\r\n", cmd.c_str());
         Serial1.printf("%s\r", cmd.c_str());
-        delay(100);
+        delay(50);
     }
 }
