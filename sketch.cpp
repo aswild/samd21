@@ -44,7 +44,7 @@ void loop()
     SerialUSB.printf("set color %d\n", i);
     ns.set_all_colors(colors[i]);
     //ns.dump_rawcolors(SerialUSB);
-    ns.write();
+    ns.write(false); // don't wait for tranfer complete (long delay soon)
 
     i = (i + 1) % N_COLORS;
     delay(1000);
