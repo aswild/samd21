@@ -31,13 +31,31 @@ static const Color CYAN     = { .i = 0x003333 };
 static const Color BLUE     = { .i = 0x000033 };
 static const Color MAGENTA  = { .i = 0x330033 };
 
+static inline uint8_t get_trigger(SERCOM *_s)
+{
+    Sercom *s = _s->getSercom();
+    if (s == SERCOM0)
+        return SERCOM0_DMAC_ID_TX;
+    if (s == SERCOM1)
+        return SERCOM1_DMAC_ID_TX;
+    if (s == SERCOM2)
+        return SERCOM2_DMAC_ID_TX;
+    if (s == SERCOM3)
+        return SERCOM3_DMAC_ID_TX;
+    if (s == SERCOM4)
+        return SERCOM4_DMAC_ID_TX;
+    if (s == SERCOM5)
+        return SERCOM5_DMAC_ID_TX;
+    return 0;
+}
+
 template <size_t N>
 class Neostrip
 {
     public:
         Color colors[N];
 
-        Neostrip(SPIClass& _spi) : spi(_spi), spi_settings(NEOSTRIP_SPI_CLOCK, MSBFIRST, SPI_MODE0)
+        Neostrip(SPIClass& _spi) : spi(_spi)
         {
             memset(colors, 0, sizeof(colors));
             memset(rawcolors, 0, sizeof(rawcolors));
@@ -46,19 +64,37 @@ class Neostrip
         void init(void)
         {
             spi.begin();
+
+            dma.setTrigger(get_trigger(spi.getSERCOM()));
+            dma.setAction(DMA_TRIGGER_ACTON_BEAT);
+            dma.allocate();
+            dma.loop(false);
+            dma.addDescriptor(
+                    (void*)(rawcolors), // source address
+                    (void*)(&(spi.getSERCOM()->getSercom()->SPI.DATA.reg)),  // dest address
+                    N * 9, DMA_BEAT_SIZE_BYTE,  // data length and beat size
+                    true, false);               // increment src addr, don't increment dest addr
+            dma.setCallback(dma_complete_callback, DMA_CALLBACK_TRANSFER_DONE, (void*)this);
+
+            // allow the first transfer to start
+            dma_complete = true;
+
+            // begin the SPI transaction and never end it
+            spi.beginTransaction(SPISettings(NEOSTRIP_SPI_CLOCK, MSBFIRST, SPI_MODE0));
         }
 
-        void write(void)
+        void write(bool sync=true)
         {
-            spi.beginTransaction(spi_settings);
-            //spi.transfer(static_cast<void*>(rawcolors), N*9);
-            //for (uint8_t *b = &rawcolors[0]; b < &rawcolors[N*9]; b++)
-                //spi.transfer(*b);
-            for (size_t i = 0; i < N*9; i++)
-                spi.transfer(rawcolors[i]);
-            //for (size_t i = 0; i < 90; i++)
-                //spi.transfer(0);
-            spi.endTransaction();
+            while (!dma_complete); // wait for previous transfer to finish
+            dma_complete = false;
+            dma.startJob();
+            if (sync)
+                while(!dma_complete);
+        }
+
+        void wait_for_complete(void)
+        {
+            while (!dma_complete);
         }
 
         void update_color(size_t index, const Color& color)
@@ -94,8 +130,15 @@ class Neostrip
 
     private:
         SPIClass& spi;
-        SPISettings spi_settings;
+        Adafruit_ZeroDMA dma;
         uint8_t rawcolors[N * 9];
+        volatile bool dma_complete;
+
+        static void dma_complete_callback(void *data)
+        {
+            Neostrip *ns = reinterpret_cast<Neostrip*>(data);
+            ns->dma_complete = true;
+        }
 
         // return the offset in the rawcolors buffer for the given pixel number
         inline uint8_t * rawcolor(size_t index)
