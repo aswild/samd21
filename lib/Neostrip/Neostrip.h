@@ -5,6 +5,11 @@
 #include <cstddef>
 #include <cstring>
 #include "SPI.h"
+#include "Adafruit_ZeroDMA.h"
+
+// define this before including bittable.h
+#define NEOSTRIP_OUTPUT_INVERT 1
+#include "neostrip_bittable.h"
 
 #define NEOSTRIP_SPI_CLOCK 2400000
 
@@ -13,7 +18,6 @@ typedef union __attribute__((packed)) {
         uint8_t blue;
         uint8_t green;
         uint8_t red;
-        uint8_t alpha;
     } b;
     uint32_t i;
 } Color;
@@ -99,6 +103,7 @@ class Neostrip
             return &rawcolors[index * 9];
         }
 
+#ifndef NEOSTRIP_BITTABLE_H
         // Expand a nibble of val (upper or lower) from 00000000abcd to 1a01b01c01d0
         // Magic multiplication and masking from
         //  https://developer.mbed.org/users/JacobBramley/code/PixelArray/file/47802e75974e/neopixel.cpp
@@ -112,20 +117,33 @@ class Neostrip
                    ((val * 0x88) & 0x410) | // 0a00000c0000
                    ((val * 0x22) & 0x82);   // 0000b00000d0
 
+#if NEOSTRIP_OUTPUT_INVERT
             // since the SPI hardware MOSI idles high, invert the bits in SW and drive the
             // NeoPixels' data pin through an inverter
             return ~ret;
+#else
+            return ret;
+#endif
         }
+#endif
 
         // store the expanded representation of val into the first 3 bytes of dest
         static void expand_chunk(uint8_t *dest, uint8_t val)
         {
+#ifdef NEOSTRIP_BITTABLE_H
+            // from https://github.com/adafruit/Adafruit_NeoPixel_ZeroDMA/blob/master/Adafruit_NeoPixel_ZeroDMA.cpp
+            uint32_t expanded = bitExpand[val];
+            dest[0] = expanded >> 16;
+            dest[1] = expanded >> 8;
+            dest[2] = expanded;
+#else
             uint32_t exp_low = expand_nibble(val, false);
             uint32_t exp_upp = expand_nibble(val, true);
 
             dest[0] = (exp_upp >> 4) & 0xff;
             dest[1] = ((exp_upp << 4) & 0xf0) | ((exp_low >> 8) & 0x0f);
             dest[2] = exp_low & 0xff;
+#endif
         }
 
         // expand a 24-bit color to 9 bytes of ws2812 data
