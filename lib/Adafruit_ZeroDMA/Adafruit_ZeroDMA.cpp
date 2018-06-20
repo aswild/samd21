@@ -497,19 +497,19 @@ DmacDescriptor *Adafruit_ZeroDMA::addDescriptor(
 	desc->BTCTRL.bit.STEPSIZE = stepSize;
 	desc->BTCNT.reg           = count;
 	desc->SRCADDR.reg         = (uint32_t)src;
-	
+
 	if(srcInc){
 		if(stepSel) desc->SRCADDR.reg += bytesPerBeat * count * (1 << stepSize);
 		else desc->SRCADDR.reg += bytesPerBeat * count;
 	}
-	
+
 	desc->DSTADDR.reg         = (uint32_t)dst;
-	
+
 	if(dstInc){
 		if(!stepSel) desc->DSTADDR.reg += bytesPerBeat * count * (1 << stepSize);
 		else desc->DSTADDR.reg += bytesPerBeat * count;
 	}
-	
+
     desc->DESCADDR.reg = loopFlag ? (uint32_t)&_descriptor[channel] : 0;
 
 	return desc;
@@ -590,7 +590,7 @@ void Adafruit_ZeroDMA::loop(boolean flag) {
 }
 
 // MISCELLANY --------------------------------------------------------------
-
+#if 0
 void Adafruit_ZeroDMA::printStatus(ZeroDMAstatus s) {
 	if(s == DMA_STATUS_JOBSTATUS) s = jobStatus;
 	Serial.print("Status: ");
@@ -628,3 +628,4 @@ void Adafruit_ZeroDMA::printStatus(ZeroDMAstatus s) {
 		break;
 	}
 }
+#endif
