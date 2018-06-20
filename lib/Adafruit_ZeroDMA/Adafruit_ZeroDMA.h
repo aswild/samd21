@@ -30,8 +30,9 @@ class Adafruit_ZeroDMA {
   void            trigger(void),
                   setTrigger(uint8_t trigger),
                   setAction(dma_transfer_trigger_action action),
-                  setCallback(void (*callback)(Adafruit_ZeroDMA *) = NULL,
-                    dma_callback_type type = DMA_CALLBACK_TRANSFER_DONE),
+                  setCallback(void (*callback)(void *) = NULL,
+                    dma_callback_type type = DMA_CALLBACK_TRANSFER_DONE,
+                    void *data = NULL),
                   loop(boolean flag),
                   suspend(void),
                   resume(void),
@@ -56,7 +57,8 @@ class Adafruit_ZeroDMA {
   bool                        loopFlag;
   uint8_t                     peripheralTrigger;
   dma_transfer_trigger_action triggerAction;
-  void                      (*callback[DMA_CALLBACK_N])(Adafruit_ZeroDMA *);
+  void                      (*callback[DMA_CALLBACK_N])(void *);
+  void                       *callbackData[DMA_CALLBACK_N];
 };
 
 #endif // _ADAFRUIT_ZERODMA_H_

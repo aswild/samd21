@@ -66,6 +66,7 @@ Adafruit_ZeroDMA::Adafruit_ZeroDMA(void) {
 	peripheralTrigger = 0;     // Software trigger only by default
 	triggerAction     = DMA_TRIGGER_ACTON_TRANSACTION;
 	memset(callback, 0, sizeof(callback));
+    memset(callbackData, 0, sizeof(callbackData));
 }
 
 // TODO: add destructor? Should stop job, delete descriptors, free channel.
@@ -133,7 +134,7 @@ void Adafruit_ZeroDMA::_IRQhandler(uint8_t flags) {
 #endif
 		jobStatus           = DMA_STATUS_ERR_IO;
 		if(callback[DMA_CALLBACK_TRANSFER_ERROR])
-			callback[DMA_CALLBACK_TRANSFER_ERROR](this);
+			callback[DMA_CALLBACK_TRANSFER_ERROR](this->callbackData[DMA_CALLBACK_TRANSFER_ERROR]);
 	} else if(flags & DMAC_CHINTENCLR_TCMPL) {
 		// Clear transfer complete flag
 #ifdef __SAMD51__
@@ -143,7 +144,7 @@ void Adafruit_ZeroDMA::_IRQhandler(uint8_t flags) {
 #endif
 		jobStatus           = DMA_STATUS_OK;
 		if(callback[DMA_CALLBACK_TRANSFER_DONE])
-			callback[DMA_CALLBACK_TRANSFER_DONE](this);
+			callback[DMA_CALLBACK_TRANSFER_DONE](this->callbackData[DMA_CALLBACK_TRANSFER_DONE]);
 	} else if(flags & DMAC_CHINTENCLR_SUSP) {
 		// Clear channel suspend flag
 #ifdef __SAMD51__
@@ -153,7 +154,7 @@ void Adafruit_ZeroDMA::_IRQhandler(uint8_t flags) {
 #endif
 		jobStatus           = DMA_STATUS_SUSPEND;
 		if(callback[DMA_CALLBACK_CHANNEL_SUSPEND])
-			callback[DMA_CALLBACK_CHANNEL_SUSPEND](this);
+			callback[DMA_CALLBACK_CHANNEL_SUSPEND](this->callbackData[DMA_CALLBACK_CHANNEL_SUSPEND]);
 	}
 }
 
@@ -331,8 +332,9 @@ ZeroDMAstatus Adafruit_ZeroDMA::startJob(void) {
 // before or after channel and/or descriptors are allocated, but needs
 // to be called before job is started.
 void Adafruit_ZeroDMA::setCallback(
-  void (*cb)(Adafruit_ZeroDMA *), dma_callback_type type) {
+  void (*cb)(void *), dma_callback_type type, void *data) {
 	callback[type] = cb;
+    callbackData[type] = data;
 }
 
 // Suspend/resume don't quite do what I thought -- avoid using for now.
