@@ -94,6 +94,7 @@ class SPIClass {
   public:
   SPIClass(SERCOM *p_sercom, uint8_t uc_pinMISO, uint8_t uc_pinSCK, uint8_t uc_pinMOSI, SercomSpiTXPad, SercomRXPad);
 
+  SERCOM * getSERCOM(void) { return this->_p_sercom; }
 
   byte transfer(uint8_t data);
   uint16_t transfer16(uint16_t data);
