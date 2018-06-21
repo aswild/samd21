@@ -13,6 +13,19 @@
 
 #define NEOSTRIP_SPI_CLOCK 2400000
 
+// DMA source address to wait for the latch
+#if NEOSTRIP_OUTPUT_INVERT
+static const uint8_t dma_zero_byte __attribute__((used)) = 0xFF;
+#else
+static const uint8_t dma_zero_byte __attribute__((used)) = 0x00;
+#endif
+
+// number of bytes needed to "transfer" low for the 50us latch
+// bits/sec * sec * bytes/bit = bytes
+// For a 2.4MHz clock, this is exactly 15. For other values, it might round down but
+// that is OK because the WS2812 doesn't need a full 50us to reset.
+static const size_t dma_zero_n_bytes = (NEOSTRIP_SPI_CLOCK * 50) / (1000000 * 8);
+
 typedef union __attribute__((packed)) {
     struct {
         uint8_t blue;
@@ -53,8 +66,6 @@ template <size_t N>
 class Neostrip
 {
     public:
-        Color colors[N];
-
         Neostrip(SPIClass& _spi) : spi(_spi)
         {
             memset(colors, 0, sizeof(colors));
@@ -63,18 +74,29 @@ class Neostrip
 
         void init(void)
         {
+            void *spi_data_reg = (void*)(&spi.getSERCOM()->getSercom()->SPI.DATA.reg);
             spi.begin();
 
             dma.setTrigger(get_trigger(spi.getSERCOM()));
             dma.setAction(DMA_TRIGGER_ACTON_BEAT);
             dma.allocate();
             dma.loop(false);
+
+            // main descriptor to send the data
             dma.addDescriptor(
-                    (void*)(rawcolors), // source address
-                    (void*)(&(spi.getSERCOM()->getSercom()->SPI.DATA.reg)),  // dest address
-                    N * 9, DMA_BEAT_SIZE_BYTE,  // data length and beat size
+                    (void*)(rawcolors),         // source address
+                    spi_data_reg,               // dest address
+                    (N*9), DMA_BEAT_SIZE_BYTE,  // data length and beat size
                     true, false);               // increment src addr, don't increment dest addr
-            dma.setCallback(dma_complete_callback, DMA_CALLBACK_TRANSFER_DONE, (void*)this);
+
+            dma.addDescriptor(
+                    (void*)(&dma_zero_byte),    // source address
+                    spi_data_reg,               // dest address
+                    dma_zero_n_bytes,           // data length
+                    DMA_BEAT_SIZE_BYTE,         // beat size
+                    false, false);              // don't increment src or dest addresses
+
+            dma.setCallback(dma_complete_callback, DMA_CALLBACK_TRANSFER_DONE, this);
 
             // allow the first transfer to start
             dma_complete = true;
@@ -131,12 +153,13 @@ class Neostrip
     private:
         SPIClass& spi;
         Adafruit_ZeroDMA dma;
+        Color colors[N];
         uint8_t rawcolors[N * 9];
         volatile bool dma_complete;
 
         static void dma_complete_callback(void *data)
         {
-            Neostrip *ns = reinterpret_cast<Neostrip*>(data);
+            Neostrip<N> *ns = static_cast<Neostrip<N>*>(data);
             ns->dma_complete = true;
         }
 
@@ -163,12 +186,11 @@ class Neostrip
 #if NEOSTRIP_OUTPUT_INVERT
             // since the SPI hardware MOSI idles high, invert the bits in SW and drive the
             // NeoPixels' data pin through an inverter
-            return ~ret;
-#else
+            ret =  ~ret;
+#endif
             return ret;
-#endif
         }
-#endif
+#endif // !NEOSTRIP_BITTABLE_H
 
         // store the expanded representation of val into the first 3 bytes of dest
         static void expand_chunk(uint8_t *dest, uint8_t val)
