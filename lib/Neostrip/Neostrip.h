@@ -89,6 +89,7 @@ class Neostrip
                     (N*9), DMA_BEAT_SIZE_BYTE,  // data length and beat size
                     true, false);               // increment src addr, don't increment dest addr
 
+            // 50us latch descriptor
             dma.addDescriptor(
                     (void*)(&dma_zero_byte),    // source address
                     spi_data_reg,               // dest address
@@ -109,6 +110,8 @@ class Neostrip
         {
             while (!dma_complete); // wait for previous transfer to finish
             dma_complete = false;
+
+            expand_all_colors();
             dma.startJob();
             if (sync)
                 while(!dma_complete);
@@ -119,19 +122,18 @@ class Neostrip
             while (!dma_complete);
         }
 
-        void update_color(size_t index, const Color& color)
+        void set_color(size_t index, const Color& color)
         {
             if (index < 0 || index >= N)
                 return;
 
             colors[index] = color;
-            expand_color(color, rawcolor(index));
         }
 
         void set_all_colors(const Color& color)
         {
             for (size_t i = 0; i < N; i++)
-                update_color(i, color);
+                set_color(i, color);
         }
 
         void clear(void) { set_all_colors(BLACK); };
@@ -161,12 +163,6 @@ class Neostrip
         {
             Neostrip<N> *ns = static_cast<Neostrip<N>*>(data);
             ns->dma_complete = true;
-        }
-
-        // return the offset in the rawcolors buffer for the given pixel number
-        inline uint8_t * rawcolor(size_t index)
-        {
-            return &rawcolors[index * 9];
         }
 
 #ifndef NEOSTRIP_BITTABLE_H
@@ -217,6 +213,14 @@ class Neostrip
             expand_chunk(&dest[0], color.b.green);
             expand_chunk(&dest[3], color.b.red);
             expand_chunk(&dest[6], color.b.blue);
+        }
+
+        void expand_all_colors(void)
+        {
+            for (size_t i = 0; i < N; i++)
+            {
+                expand_color(colors[i], &rawcolors[i*9]);
+            }
         }
 };
 
