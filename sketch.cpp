@@ -3,10 +3,10 @@
 #include "Neostrip.h"
 #include "wiring_private.h"
 
+#include "huetable.h"
+
 #define AIN_BRIGHTNESS 9
 #define STRIP_LENGTH 8
-
-static void hue_to_color(Color& c, float h);
 
 DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 Neostrip<STRIP_LENGTH> ns(SPI);
@@ -17,6 +17,7 @@ const Color colors[] = { RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA };
 void setup(void)
 {
     ns.init();
+    //ns.set_all_colors(WHITE);
     ns.clear();
     ns.write();
 
@@ -40,9 +41,8 @@ void setup(void)
 
 void loop(void)
 {
-    static const float dh = 360.0f / STRIP_LENGTH;
-
-    static float basehue = 0.0f;
+    static const size_t dh = 360 / STRIP_LENGTH;
+    static size_t basehue = 0;
 
 #if 0
     if (!SerialUSB)
@@ -66,20 +66,26 @@ void loop(void)
     {
         Color c;
         //m1 = micros();
-        hue_to_color(c, (dh * i) - basehue);
+        //hue_to_color(c, (dh * i) - basehue);
+        int index = (dh * i) - basehue;
+        if (index >= 360)
+            index -= 360;
+        if (index < 0)
+            index += 360;
+        c.i = huetable[index];
         //m2 = micros();
         ns.set_color(i, c);
 
-        basehue += 0.25f;
-        if (basehue > 360.0f)
-            basehue = 0.0f;
+        if (++basehue >= 360)
+            basehue = 0;
     }
     m2 = micros();
-    SerialUSB.printf("%ld\n", m2-m1);
+    //SerialUSB.printf("%ld\n", m2-m1);
 
-    delay(10);
+    delay(50);
 }
 
+#if 0
 // Converts HSV to RGB with the given hue, assuming
 // maximum saturation and value
 static void hue_to_color(Color& c, float h)
@@ -110,3 +116,4 @@ static void hue_to_color(Color& c, float h)
     c.b.green = (uint8_t)(g * 255.0f);
     c.b.blue  = (uint8_t)(b * 255.0f);
 }
+#endif
