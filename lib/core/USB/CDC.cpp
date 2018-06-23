@@ -239,7 +239,7 @@ Serial_::operator bool()
 		result = true;
 	}
 
-	delay(10);
+	//delay(10); // WILD: don't do this, it breaks application timing
 	return result;
 }
 
