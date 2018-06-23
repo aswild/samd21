@@ -25,8 +25,10 @@ void setup()
     pinPeripheral(13, PIO_OUTPUT);
     blue_led = 1;
 
-    while (!SerialUSB);
-    SerialUSB.println("NeoPixel Demo!");
+    while (!SerialUSB)
+        delay(10);
+    delay(10);
+    SerialUSB.print("NeoPixel Demo!\n");
     //ns.dump_rawcolors(SerialUSB);
 
     blue_led = 0;
@@ -34,25 +36,32 @@ void setup()
 
 void loop()
 {
-    static int i = 0;
+    static const unsigned long looptime_ms = 10;
+    static const size_t colorchange_count = 1000 / looptime_ms;
+    static size_t ci = 0;
+    static size_t loopcount = colorchange_count-1;
 
     if (!SerialUSB)
     {
         blue_led = 1;
         ns.clear();
         ns.write();
-        while (!SerialUSB);
+        while (!SerialUSB)
+            delay(10);
         blue_led = 0;
     }
 
     uint8_t b = analogRead(AIN_BRIGHTNESS);
-
-    SerialUSB.printf("set brightness %u, color %d\n", b, i);
     ns.set_brightness(b);
-    ns.set_all_colors(colors[i]);
-    //ns.dump_rawcolors(SerialUSB);
     ns.write(false); // don't wait for tranfer complete (long delay soon)
 
-    i = (i + 1) % N_COLORS;
-    delay(1000);
+    if (++loopcount == colorchange_count)
+    {
+        SerialUSB.printf("set brightness %u, color %d\n", b, ci);
+        ns.set_all_colors(colors[ci]);
+        ci = (ci + 1) % N_COLORS;
+        loopcount = 0;
+    }
+
+    delay(looptime_ms);
 }
