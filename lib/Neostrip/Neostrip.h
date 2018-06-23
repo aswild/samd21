@@ -36,13 +36,13 @@ typedef union __attribute__((packed)) {
 } Color;
 
 static const Color BLACK    = { .i = 0x000000 };
-static const Color WHITE    = { .i = 0x333333 };
-static const Color RED      = { .i = 0x330000 };
-static const Color YELLOW   = { .i = 0x333300 };
-static const Color GREEN    = { .i = 0x003300 };
-static const Color CYAN     = { .i = 0x003333 };
-static const Color BLUE     = { .i = 0x000033 };
-static const Color MAGENTA  = { .i = 0x330033 };
+static const Color WHITE    = { .i = 0xFFFFFF };
+static const Color RED      = { .i = 0xFF0000 };
+static const Color YELLOW   = { .i = 0xFFFF00 };
+static const Color GREEN    = { .i = 0x00FF00 };
+static const Color CYAN     = { .i = 0x00FFFF };
+static const Color BLUE     = { .i = 0x0000FF };
+static const Color MAGENTA  = { .i = 0xFF00FF };
 
 static inline uint8_t get_trigger(SERCOM *_s)
 {
@@ -66,7 +66,7 @@ template <size_t N>
 class Neostrip
 {
     public:
-        Neostrip(SPIClass& _spi) : spi(_spi)
+        Neostrip(SPIClass& _spi) : spi(_spi), brightness(256)
         {
             memset(colors, 0, sizeof(colors));
             memset(rawcolors, 0, sizeof(rawcolors));
@@ -117,7 +117,7 @@ class Neostrip
                 while(!dma_complete);
         }
 
-        void wait_for_complete(void)
+        void wait_for_complete(void) const
         {
             while (!dma_complete);
         }
@@ -137,6 +137,17 @@ class Neostrip
         }
 
         void clear(void) { set_all_colors(BLACK); };
+
+        // brightness logic from Adafruit_NeoPixel_ZeroDMA.
+        // 0-255 values are stored internally as 1-256
+        void set_brightness(uint8_t b)
+        {
+            brightness = (uint16_t)b + 1;
+        }
+        uint8_t get_brightness(void) const
+        {
+            return brightness - 1;
+        }
 
 #if 0
         void dump_rawcolors(Print& p)
@@ -158,6 +169,7 @@ class Neostrip
         Color colors[N];
         uint8_t rawcolors[N * 9];
         volatile bool dma_complete;
+        uint16_t brightness;
 
         static void dma_complete_callback(void *data)
         {
@@ -207,19 +219,20 @@ class Neostrip
 #endif
         }
 
-        // expand a 24-bit color to 9 bytes of ws2812 data
-        static void expand_color(const Color& color, uint8_t *dest)
+        inline uint8_t scale_brightness(uint8_t val) const
         {
-            expand_chunk(&dest[0], color.b.green);
-            expand_chunk(&dest[3], color.b.red);
-            expand_chunk(&dest[6], color.b.blue);
+            return ((uint16_t)val * brightness) >> 8;
         }
 
         void expand_all_colors(void)
         {
             for (size_t i = 0; i < N; i++)
             {
-                expand_color(colors[i], &rawcolors[i*9]);
+                const Color& c = colors[i];
+                const size_t ri = i * 9;
+                expand_chunk(&rawcolors[ri+0], scale_brightness(c.b.green));
+                expand_chunk(&rawcolors[ri+3], scale_brightness(c.b.red));
+                expand_chunk(&rawcolors[ri+6], scale_brightness(c.b.blue));
             }
         }
 };
