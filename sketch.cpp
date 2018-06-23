@@ -3,6 +3,8 @@
 #include "Neostrip.h"
 #include "wiring_private.h"
 
+#define AIN_BRIGHTNESS 9
+
 DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 
 Neostrip<8> ns(SPI);
@@ -15,6 +17,8 @@ void setup()
     ns.init();
     ns.clear();
     ns.write();
+
+    analogReadResolution(8);
 
     // pin 13 is shared between SCK and the LED, I don't need SCK so
     // move the mux back to PORT output
@@ -41,7 +45,10 @@ void loop()
         blue_led = 0;
     }
 
-    SerialUSB.printf("set color %d\n", i);
+    uint8_t b = analogRead(AIN_BRIGHTNESS);
+
+    SerialUSB.printf("set brightness %u, color %d\n", b, i);
+    ns.set_brightness(b);
     ns.set_all_colors(colors[i]);
     //ns.dump_rawcolors(SerialUSB);
     ns.write(false); // don't wait for tranfer complete (long delay soon)
