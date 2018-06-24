@@ -3,16 +3,13 @@
 #include "Neostrip.h"
 #include "wiring_private.h"
 
-#include "huetable.h"
+#define TIMING_DEBUG 0
 
 #define AIN_BRIGHTNESS 9
 #define STRIP_LENGTH 8
 
 DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 Neostrip<STRIP_LENGTH> ns(SPI);
-
-const int N_COLORS = 6;
-const Color colors[] = { RED, YELLOW, GREEN, CYAN, BLUE, MAGENTA };
 
 void setup(void)
 {
@@ -39,10 +36,65 @@ void setup(void)
     blue_led = 0;
 }
 
+static const int N_STEPS = 256 * 6;
+static Color get_color(int n)
+{
+    Color c = { .i = 0 };
+
+    while (n >= N_STEPS)
+        n -= N_STEPS;
+    while (n < 0)
+        n += N_STEPS;
+
+    uint8_t stage = n / 256;
+    uint8_t step = n % 256;
+
+    switch (stage)
+    {
+        case 0:
+            // red -> yellow
+            c.b.red = 0xff;
+            c.b.green = step;
+            break;
+
+        case 1:
+            // yellow -> green
+            c.b.red = 0xff - step;
+            c.b.green = 0xff;
+            break;
+
+        case 2:
+            // green -> cyan
+            c.b.green = 0xff;
+            c.b.blue = step;
+            break;
+
+        case 3:
+            // cyan -> blue
+            c.b.green = 0xff - step;
+            c.b.blue = 0xff;
+            break;
+
+        case 4:
+            // blue -> magenta
+            c.b.red = step;
+            c.b.blue = 0xff;
+            break;
+
+        case 5:
+            // magenta -> red
+            c.b.blue = 0xff - step;
+            c.b.red = 0xff;
+            break;
+    }
+
+    return c;
+}
+
 void loop(void)
 {
-    static const size_t dh = 360 / STRIP_LENGTH;
-    static size_t basehue = 0;
+    static const int dh = N_STEPS / STRIP_LENGTH;
+    static int basehue = 0;
 
 #if 0
     if (!SerialUSB)
@@ -57,63 +109,26 @@ void loop(void)
 #endif
 
     uint8_t b = analogRead(AIN_BRIGHTNESS);
+    if (b == 1)
+        b = 0;
     ns.set_brightness(b);
     ns.write(false); // don't wait for tranfer complete (long delay soon)
 
+#if TIMING_DEBUG
     unsigned long m1, m2;
     m1 = micros();
-    for (size_t i = 0; i < STRIP_LENGTH; i++)
+#endif
+    for (int i = 0; i < STRIP_LENGTH; i++)
     {
-        Color c;
-        //m1 = micros();
-        //hue_to_color(c, (dh * i) - basehue);
-        int index = (dh * i) - basehue;
-        if (index >= 360)
-            index -= 360;
-        if (index < 0)
-            index += 360;
-        c.i = huetable[index];
-        //m2 = micros();
-        ns.set_color(i, c);
+        ns.set_color(i, get_color((dh * i) - basehue));
 
-        if (++basehue >= 360)
+        if (++basehue >= N_STEPS)
             basehue = 0;
     }
+#if TIMING_DEBUG
     m2 = micros();
-    //SerialUSB.printf("%ld\n", m2-m1);
-
-    delay(50);
-}
-
-#if 0
-// Converts HSV to RGB with the given hue, assuming
-// maximum saturation and value
-static void hue_to_color(Color& c, float h)
-{
-    // lots of floating point magic from the internet and scratching my head
-    float r, g, b;
-    if (h > 360.0f)
-        h -= 360.0f;
-    if (h < 0.0f)
-        h += 360.0f;
-    int i = (int)(h / 60.0f);
-    float f = (h / 60.0f) - i;
-    float q = 1.0f - f;
-
-    switch (i % 6)
-    {
-        case 0: r = 1; g = f; b = 0; break;
-        case 1: r = q; g = 1; b = 0; break;
-        case 2: r = 0; g = 1; b = f; break;
-        case 3: r = 0; g = q; b = 1; break;
-        case 4: r = f; g = 0; b = 1; break;
-        case 5: r = 1; g = 0; b = q; break;
-        default: r = 0; g = 0; b = 0; break;
-    }
-
-    // scale to integers and save in the color
-    c.b.red   = (uint8_t)(r * 255.0f);
-    c.b.green = (uint8_t)(g * 255.0f);
-    c.b.blue  = (uint8_t)(b * 255.0f);
-}
+    SerialUSB.printf("%ld\n", m2-m1);
 #endif
+
+    delay(17);
+}
