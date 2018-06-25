@@ -7,23 +7,78 @@
 
 #define AIN_BRIGHTNESS 9
 #define STRIP_LENGTH 8
+#define BRIGHTNESS_STEP 2
 
 DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 Neostrip<STRIP_LENGTH> ns(SPI);
 
+DigitalIn rpg_a(2);
+DigitalIn rpg_b(3);
+DigitalIn rpg_pb(5);
+
+static volatile uint8_t rpg_state;
+static volatile int brightness = (10 * 255) / 100;
+static volatile int direction = 1;
+
+static inline void read_rpg(void)
+{
+    rpg_state = (rpg_a << 1) | rpg_b;
+}
+
+static void rpg_isr(void)
+{
+    __disable_irq();
+    uint8_t old_state = rpg_state;
+    read_rpg();
+    if ((old_state ^ (rpg_state<<1)) & 2)
+    {
+        brightness += BRIGHTNESS_STEP;
+    }
+    else
+    {
+        brightness -= BRIGHTNESS_STEP;
+    }
+    __enable_irq();
+}
+
+static void rpg_pb_isr(void)
+{
+    direction *= -1;
+}
+
+static inline uint8_t clamp_brightness(void)
+{
+    __disable_irq();
+    int b = brightness;
+    if (b < 0)
+    {
+        b = brightness = 0;
+    }
+    if (b > 255)
+    {
+        b = brightness = 255;
+    }
+    __enable_irq();
+    return (uint8_t)b;
+}
+
 void setup(void)
 {
+    blue_led = 1;
+
+    read_rpg();
+
+    rpg_a.add_interrupt(rpg_isr, CHANGE);
+    rpg_a.set_interrupt_filter(true);
+    rpg_b.add_interrupt(rpg_isr, CHANGE);
+    rpg_b.set_interrupt_filter(true);
+
+    rpg_pb.mode(INPUT_PULLUP);
+    rpg_pb.add_interrupt(rpg_pb_isr, FALLING);
+
     ns.init();
-    //ns.set_all_colors(WHITE);
     ns.clear();
     ns.write();
-
-    analogReadResolution(8);
-
-    // pin 13 is shared between SCK and the LED, I don't need SCK so
-    // move the mux back to PORT output
-    pinPeripheral(13, PIO_OUTPUT);
-    blue_led = 1;
 
 #if 0
     while (!SerialUSB)
@@ -33,6 +88,9 @@ void setup(void)
     //ns.dump_rawcolors(SerialUSB);
 #endif
 
+    // pin 13 is shared between SCK and the LED, I don't need SCK so
+    // move the mux back to PORT output
+    pinPeripheral(13, PIO_OUTPUT);
     blue_led = 0;
 }
 
@@ -108,10 +166,8 @@ void loop(void)
     }
 #endif
 
-    uint8_t b = analogRead(AIN_BRIGHTNESS);
-    if (b == 1)
-        b = 0;
-    ns.set_brightness(b);
+    ns.set_brightness(clamp_brightness());
+    //SerialUSB.printf("brightness %d, rpg %u\n", brightness, rpg_state);
     ns.write(false); // don't wait for tranfer complete (long delay soon)
 
 #if TIMING_DEBUG
@@ -122,8 +178,11 @@ void loop(void)
     {
         ns.set_color(i, get_color((dh * i) - basehue));
 
-        if (++basehue >= N_STEPS)
+        basehue += 1 * direction;
+        if (basehue >= N_STEPS)
             basehue = 0;
+        else if (basehue < 0)
+            basehue = N_STEPS-1;
     }
 #if TIMING_DEBUG
     m2 = micros();
