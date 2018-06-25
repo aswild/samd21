@@ -198,3 +198,33 @@ void EIC_Handler(void)
     }
   }
 }
+
+/*
+ * \brief enable or disable majority vote filter
+ */
+void setInterruptFilter(uint32_t pin, bool filter)
+{
+  uint32_t config;
+  uint32_t pos;
+#if ARDUINO_SAMD_VARIANT_COMPLIANCE >= 10606
+  EExt_Interrupts in = g_APinDescription[pin].ulExtInt;
+#else
+  EExt_Interrupts in = digitalPinToInterrupt(pin);
+#endif
+  if (in == NOT_AN_INTERRUPT || in == EXTERNAL_INT_NMI)
+    return;
+
+  // Look for right CONFIG register to be addressed
+  if (in > EXTERNAL_INT_7) {
+    config = 1;
+    pos = (in - 8) << 2;
+  } else {
+    config = 0;
+    pos = in << 2;
+  }
+
+  if (filter)
+    EIC->CONFIG[config].reg |= EIC_CONFIG_FILTEN0 << pos;
+  else
+    EIC->CONFIG[config].reg &= ~(EIC_CONFIG_FILTEN0 << pos);
+}

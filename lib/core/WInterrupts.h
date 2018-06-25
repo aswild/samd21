@@ -20,6 +20,7 @@
 #define _WIRING_INTERRUPTS_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +47,11 @@ void attachInterrupt(uint32_t pin, voidFuncPtr callback, uint32_t mode);
  * \brief Turns off the given interrupt.
  */
 void detachInterrupt(uint32_t pin);
+
+/*
+ * \brief enable or disable majority vote filter
+ */
+void setInterruptFilter(uint32_t pin, bool filter);
 
 #ifdef __cplusplus
 }
