@@ -12,9 +12,9 @@
 DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 Neostrip<STRIP_LENGTH> ns(SPI);
 
-DigitalIn rpg_a(2);
-DigitalIn rpg_b(3);
-DigitalIn rpg_pb(5);
+DigitalIn rpg_a(6);
+DigitalIn rpg_b(7);
+DigitalIn rpg_pb(9);
 
 static volatile uint8_t rpg_state;
 static volatile int brightness = (10 * 255) / 100;
