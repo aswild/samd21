@@ -24,15 +24,27 @@ OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 CPPFLAGS    = -D__SAMD21G18A__ $(addprefix -I,$(INCLUDES))
 CPPFLAGS   += -MMD -MP
 
-# used everywhere
+# used in CFLAGS/LDFLAGS
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
 
-# used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
+# not used in LDFLAGS
 CFLAGS      = -std=gnu99 $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
 CFLAGS     += -fno-exceptions -ffunction-sections -fdata-sections
 
+ifeq ($(APP),1)
+# link as an application at 0x2000 and disable application loading (SAM-BA only)
+CPPFLAGS   += -DAPPMODE
+FLASH_START = 0x00002000
+FLASH_SIZE  = 0x0003E000
+else
+FLASH_START = 0x00000000
+FLASH_SIZE  = 0x00040000
+endif
+
 LDSCRIPT   ?= samd21g18a_flash.ld
-LDFLAGS     = $(CFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+
+LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LDFLAGS    += -Wl,--defsym,FLASH_START=$(FLASH_START) -Wl,--defsym,FLASH_SIZE=$(FLASH_SIZE)
 LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
 LDFLAGS    += -Wl,-Map=$(TARGET).map
