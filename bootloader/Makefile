@@ -21,8 +21,10 @@ SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 OPENOCD = openocd
 OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 
-CPPFLAGS    = -D__SAMD21G18A__ $(addprefix -I,$(INCLUDES))
-CPPFLAGS   += -MMD -MP
+VERSION    := $(shell utils/get_version.sh)
+
+CPPFLAGS    = -D__SAMD21G18A__ -DUSB_PRODUCT='"SAMD21G18A SAM-BA"' -DUSB_SERIAL_NUM='"$(VERSION)"'
+CPPFLAGS   += $(addprefix -I,$(INCLUDES)) -MMD -MP
 
 # used in CFLAGS/LDFLAGS
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
