@@ -136,7 +136,7 @@ class Neostrip
                 set_color(i, color);
         }
 
-        void clear(void) { set_all_colors(BLACK); };
+        void clear(void) { set_all_colors(BLACK); }
 
         // brightness logic from Adafruit_NeoPixel_ZeroDMA.
         // 0-255 values are stored internally as 1-256

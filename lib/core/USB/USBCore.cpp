@@ -192,7 +192,7 @@ bool USBDeviceClass::sendDescriptor(USBSetup &setup)
 {
 	uint8_t t = setup.wValueH;
 	uint8_t desc_length = 0;
-	bool _cdcComposite;
+	bool _cdcComposite = false;
 	int ret;
 	const uint8_t *desc_addr = 0;
 
