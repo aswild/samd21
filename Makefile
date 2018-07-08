@@ -51,7 +51,10 @@ OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
-LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
+SOURCE_VERSION := $(shell bin/get_version.sh --branch)
+
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON $(COREINCS) -DSOURCE_VERSION='"$(SOURCE_VERSION)"'
+LCPPFLAGS  += -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 LCPPFLAGS  += -MMD -MP
 
 # used everywhere

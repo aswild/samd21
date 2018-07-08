@@ -21,7 +21,7 @@ SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 OPENOCD = openocd
 OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 
-VERSION    := $(shell ../bin/get_version.sh)
+VERSION    := $(shell ../bin/get_version.sh --sam-ba)
 
 LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"SAMD21G18A SAM-BA"' -DUSB_SERIAL_NUM='"$(VERSION)"'
 LCPPFLAGS  += $(addprefix -I,$(INCLUDES)) -MMD -MP
