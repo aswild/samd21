@@ -9,6 +9,40 @@ CMSIS_DIR = ../lib/CMSIS
 INCLUDES = drivers utils utils/interrupt utils/preprocessor \
            $(CMSIS_DIR)/Include ../lib/CMSIS-Atmel
 
+ifeq ($(APP),1)
+# link as an application at 0x2000 and disable application loading (SAM-BA only)
+LCPPFLAGS  += -DAPPMODE
+FLASH_START = 0x00002000
+FLASH_SIZE  = 0x0003E000
+else
+FLASH_START = 0x00000000
+FLASH_SIZE  = 0x00040000
+endif
+
+COMPORT     ?= /dev/ttyACM0
+BOSSAC      ?= bossac
+BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
+OS          := $(shell uname -s)
+ifeq ($(OS),Linux)
+RESET_SCRIPT = ../bin/reset-arduino-linux.sh -q $(COMPORT)
+else
+RESET_SCRIPT = ../bin/ard-reset-arduino --zero $(COMPORT)
+endif
+
+# my bossa-git AUR package sets the version to the Arch pkgver, which is 1.8.rXX.gYYYYYYY since
+# there hasn't been a v1.9 tag yet, so figure out the version by checking for the availability
+# of the --arduino-erase option
+BOSSA_19 := $(shell $(BOSSAC) --help 2>/dev/null | grep -q -e '--arduino-erase' && echo y || echo n)
+ifeq ($(BOSSA_19),y)
+# we have auto-erase available
+BOSSAC_FLAGS := $(filter-out --erase,$(BOSSAC_FLAGS))
+# BOSSA v1.8 hard-coded the flash starting address as 0x2000, so the command-line offset
+# must be zero (the default) or else the program would get written to 0x4000.
+# BOSSA v1.9 doesn't do that, so we must set the offset to 0x2000 or else the bootloader
+# will get overwritten, bricking the board.
+BOSSAC_FLAGS += --offset=$(FLASH_START)
+endif
+
 # Tools Configuration
 TOOLCHAIN_BIN ?=
 CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
@@ -22,9 +56,14 @@ OPENOCD = openocd
 OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 
 VERSION    := $(shell ../bin/get_version.sh --sam-ba)
+USB_PRODUCT = SAMD21G18A SAM-BA
 
-LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"SAMD21G18A SAM-BA"' -DUSB_SERIAL_NUM='"$(VERSION)"'
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"$(USB_PRODUCT)"' -DUSB_SERIAL_NUM='"$(VERSION)"'
 LCPPFLAGS  += $(addprefix -I,$(INCLUDES)) -MMD -MP
+ifeq ($(APP),1)
+USB_PRODUCT += APP
+LCPPFLAGS  += -DAPPMODE
+endif
 
 # used in CFLAGS/LDFLAGS
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
@@ -32,16 +71,6 @@ CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
 # not used in LDFLAGS
 LCFLAGS     = -std=gnu99 $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
 LCFLAGS    += -fno-exceptions -ffunction-sections -fdata-sections
-
-ifeq ($(APP),1)
-# link as an application at 0x2000 and disable application loading (SAM-BA only)
-LCPPFLAGS  += -DAPPMODE
-FLASH_START = 0x00002000
-FLASH_SIZE  = 0x0003E000
-else
-FLASH_START = 0x00000000
-FLASH_SIZE  = 0x00040000
-endif
 
 LDSCRIPT   ?= samd21g18a_flash.ld
 
@@ -93,6 +122,11 @@ size: $(TARGET_HEX)
 .PHONY: upload
 upload: $(TARGET_BIN) all
 	$(_V_UPLOAD_$(V))$(OPENOCD) $(OPENOCD_CMD)
+
+.PHONY: upload-bossa
+upload-bossa: $(TARGET_BIN) all
+	$(_V_RESET_$(V))$(RESET_SCRIPT)
+	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
 
 .PHONY: clean
 clean:
