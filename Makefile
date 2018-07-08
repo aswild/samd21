@@ -43,6 +43,8 @@ endif
 TOOLCHAIN_BIN ?=
 CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
 CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
+AS      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc -x assembler-with-cpp
+CCLD    = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
 AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
 OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
@@ -76,7 +78,7 @@ CFLAGS     += $(USER_CFLAGS)
 CXXFLAGS    = $(CCXXFLAGS) -std=gnu++11 -fno-rtti -fno-threadsafe-statics
 CXXFLAGS   += $(USER_CXXFLAGS)
 
-ASFLAGS     = $(CCXXFLAGS) -x assembler-with-cpp
+ASFLAGS     = $(CCXXFLAGS)
 ASFLAGS    += $(USER_ASFLAGS)
 
 LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
@@ -149,7 +151,7 @@ gdb: $(TARGET_ELF)
 	$(GDB) -q $(TARGET_ELF) -ex "target extended-remote :2331" -ex "load" -ex "mon reset"
 
 $(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
-	$(_V_LD_$(V))$(CC) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
+	$(_V_LD_$(V))$(CCLD) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
 
 $(TARGET_BIN): $(TARGET_ELF)
 	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
@@ -167,7 +169,7 @@ $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(_V_CXX_$(V))$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: %.S | $(OBJDIR)
-	$(_V_AS_$(V))$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
+	$(_V_AS_$(V))$(AS) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
 
 $(CORELIB): $(CORE_OBJS)
 	$(_V_AR_$(V))$(AR) rcs $@ $^
