@@ -93,6 +93,29 @@ CORELIB     = $(OBJDIR)/libcore.a
 LIBS        = -lcore -lm -larm_cortexM0l_math
 LIBS       += $(USER_LIBS)
 
+ifeq ($(CLANG),1)
+$(info >>> Building with clang!)
+SYSROOT     = /usr/arm-none-eabi
+CC          = clang -target arm-none-eabi --sysroot=$(SYSROOT)
+CXX         = clang++ -target arm-none-eabi --sysroot=$(SYSROOT)
+AR          = llvm-ar
+
+CXX_INCDIR := $(shell find $(SYSROOT)/include/c++ -mindepth 1 -maxdepth 1 -type d | tail -n1)
+CPUFLAGS   := $(filter-out -flto,$(CPUFLAGS))
+# turn on -Weverything, then disable a ton of warnings I won't fix
+#CCXXFLAGS  += -Weverything -Wno-reserved-id-macro -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-undef
+#CCXXFLAGS  += -Wno-non-virtual-dtor -Wno-old-style-cast -Wno-zero-as-null-pointer-constant -Wno-padded
+#CCXXFLAGS  += -Wno-documentation -Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-unused-function
+#CCXXFLAGS  += -Wno-shadow -Wno-shadow-field-in-constructor -Wno-c++14-binary-literal
+#CCXXFLAGS  += -Wno-c99-extensions -Wno-global-constructors -Wno-weak-vtables -Wno-sign-conversion -Wno-conversion
+#CCXXFLAGS  += -Wno-error
+
+# GNU linker expects short enums, but clang uses 32 bits by default
+# clang wrongly thinks some symbol-aliased functions are unused
+CCXXFLAGS  += -fshort-enums -Wno-unused-function
+CXXFLAGS   += -I$(CXX_INCDIR) -I$(CXX_INCDIR)/arm-none-eabi
+endif # clang
+
 vpath %.c   $(CORESRCDIRS)
 vpath %.cpp $(CORESRCDIRS)
 vpath %.S   $(CORESRCDIRS)
