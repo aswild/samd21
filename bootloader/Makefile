@@ -23,19 +23,19 @@ OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 
 VERSION    := $(shell utils/get_version.sh)
 
-CPPFLAGS    = -D__SAMD21G18A__ -DUSB_PRODUCT='"SAMD21G18A SAM-BA"' -DUSB_SERIAL_NUM='"$(VERSION)"'
-CPPFLAGS   += $(addprefix -I,$(INCLUDES)) -MMD -MP
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"SAMD21G18A SAM-BA"' -DUSB_SERIAL_NUM='"$(VERSION)"'
+LCPPFLAGS  += $(addprefix -I,$(INCLUDES)) -MMD -MP
 
 # used in CFLAGS/LDFLAGS
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
 
 # not used in LDFLAGS
-CFLAGS      = -std=gnu99 $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
-CFLAGS     += -fno-exceptions -ffunction-sections -fdata-sections
+LCFLAGS     = -std=gnu99 $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
+LCFLAGS    += -fno-exceptions -ffunction-sections -fdata-sections
 
 ifeq ($(APP),1)
 # link as an application at 0x2000 and disable application loading (SAM-BA only)
-CPPFLAGS   += -DAPPMODE
+LCPPFLAGS  += -DAPPMODE
 FLASH_START = 0x00002000
 FLASH_SIZE  = 0x0003E000
 else
@@ -45,14 +45,19 @@ endif
 
 LDSCRIPT   ?= samd21g18a_flash.ld
 
-LDFLAGS     = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
-LDFLAGS    += -Wl,--defsym,FLASH_START=$(FLASH_START) -Wl,--defsym,FLASH_SIZE=$(FLASH_SIZE)
-LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
-LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
-LDFLAGS    += -Wl,-Map=$(TARGET).map
-LDFLAGS    += -L$(CMSIS_DIR)
+LLDFLAGS    = $(CPUFLAGS) -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LLDFLAGS   += -Wl,--defsym,FLASH_START=$(FLASH_START) -Wl,--defsym,FLASH_SIZE=$(FLASH_SIZE)
+LLDFLAGS   += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
+LLDFLAGS   += -Wl,--warn-common -Wl,--warn-section-align
+LLDFLAGS   += -Wl,-Map=$(TARGET).map
+LLDFLAGS   += -L$(CMSIS_DIR)
 
-LIBS        = -larm_cortexM0l_math
+LLIBS       = -larm_cortexM0l_math
+
+define override_flags =
+override $(1) := $$(strip $$(L$(1)) $$($(1)))
+endef
+$(foreach f,CPPFLAGS CFLAGS LDFLAGS LIBS,$(eval $(call override_flags,$(f))))
 
 TARGET_OBJ  = $(SOURCES:.c=.o)
 DEPS        = $(TARGET_OBJ:.o=.d)
