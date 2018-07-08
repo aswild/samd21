@@ -51,14 +51,8 @@ OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
-USER_CFLAGS     := $(CFLAGS)
-USER_CXXFLAGS   := $(CXXFLAGS)
-USER_ASFLAGS    := $(ASFLAGS)
-USER_LDFLAGS    := $(LDFLAGS)
-USER_LIBS       := $(LIBS)
-
-CPPFLAGS    = -D__SAMD21G18A__ -DUSBCON $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
-CPPFLAGS   += -MMD -MP
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
+LCPPFLAGS  += -MMD -MP
 
 # used everywhere
 CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
@@ -72,26 +66,21 @@ endif
 CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
 CCXXFLAGS  += -fno-exceptions -ffunction-sections -fdata-sections
 
-CFLAGS      = $(CCXXFLAGS) -std=gnu11
-CFLAGS     += $(USER_CFLAGS)
+LCFLAGS     = $(CCXXFLAGS) -std=gnu11
 
-CXXFLAGS    = $(CCXXFLAGS) -std=gnu++11 -fno-rtti -fno-threadsafe-statics
-CXXFLAGS   += $(USER_CXXFLAGS)
+LCXXFLAGS   = $(CCXXFLAGS) -std=gnu++11 -fno-rtti -fno-threadsafe-statics
 
-ASFLAGS     = $(CCXXFLAGS)
-ASFLAGS    += $(USER_ASFLAGS)
+LASFLAGS    = $(CCXXFLAGS)
 
 LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
-LDFLAGS     = $(CPUFLAGS) -fuse-linker-plugin -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
-LDFLAGS    += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
-LDFLAGS    += -Wl,--warn-common -Wl,--warn-section-align
-LDFLAGS    += -Wl,-Map=$(OBJDIR)/$(TARGET).map
-LDFLAGS    += -L$(OBJDIR) -L$(CMSIS_DIR)
-LDFLAGS    += $(USER_LDFLAGS)
+LLDFLAGS    = $(CPUFLAGS) -fuse-linker-plugin -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LLDFLAGS   += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
+LLDFLAGS   += -Wl,--warn-common -Wl,--warn-section-align
+LLDFLAGS   += -Wl,-Map=$(OBJDIR)/$(TARGET).map
+LLDFLAGS   += -L$(OBJDIR) -L$(CMSIS_DIR)
 
 CORELIB     = $(OBJDIR)/libcore.a
-LIBS        = -lcore -lm -larm_cortexM0l_math
-LIBS       += $(USER_LIBS)
+LLIBS       = -lcore -lm -larm_cortexM0l_math
 
 ifeq ($(CLANG),1)
 $(info >>> Building with clang!)
@@ -113,8 +102,13 @@ CPUFLAGS   := $(filter-out -flto,$(CPUFLAGS))
 # GNU linker expects short enums, but clang uses 32 bits by default
 # clang wrongly thinks some symbol-aliased functions are unused
 CCXXFLAGS  += -fshort-enums -Wno-unused-function
-CXXFLAGS   += -I$(CXX_INCDIR) -I$(CXX_INCDIR)/arm-none-eabi
+LCXXFLAGS  += -I$(CXX_INCDIR) -I$(CXX_INCDIR)/arm-none-eabi
 endif # clang
+
+define override_flags =
+override $(1) := $$(strip $$(L$(1)) $$($(1)))
+endef
+$(foreach f,CPPFLAGS CFLAGS CXXFLAGS ASFLAGS LDFLAGS LIBS,$(eval $(call override_flags,$(f))))
 
 vpath %.c   $(CORESRCDIRS)
 vpath %.cpp $(CORESRCDIRS)
