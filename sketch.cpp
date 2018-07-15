@@ -41,31 +41,11 @@ void loop(void)
     }
 
     SerialUSB.write("> ");
-    String cmd = "";
-    while (true)
-    {
-        while (!SerialUSB.available());
-        char c = SerialUSB.read();
-        if (c == '\r')
-        {
-            SerialUSB.print("\r\n");
-            break;
-        }
-        else if (c == '\b')
-        {
-            cmd.remove(cmd.length()-1, 1);
-            SerialUSB.print("\b \b");
-        }
-        else
-        {
-            cmd += c;
-            SerialUSB.write(c);
-        }
-    }
-    if (cmd.length())
-    {
-        //SerialUSB.printf("Send command: '%s'\r\n", cmd.c_str());
-        Serial1.printf("%s\r", cmd.c_str());
+    char cmdbuf[16];
+    size_t cmdlen = SerialUSB.readLine(cmdbuf, sizeof(cmdbuf), true);
+    if (cmdlen) {
+        //SerialUSB.printf("count=%u buf='%s'\r\n", cmdlen, cmdbuf);
+        Serial1.printf("%s\r", cmdbuf);
         delay(50);
     }
 }
