@@ -46,10 +46,13 @@ OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 SEARCH_DIR(.)
 
+FLASH_START = DEFINED(FLASH_START) ? FLASH_START : 0x00000000;
+FLASH_SIZE = DEFINED(FLASH_SIZE) ? FLASH_SIZE : 0x00040000;
+
 /* Memory Spaces Definitions */
 MEMORY
 {
-  rom      (rx)  : ORIGIN = 0x00000000, LENGTH = 0x00040000
+  rom      (rx)  : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE
   ram      (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00008000-0x400 /* 4 bytes for double-tap */
 }
 

@@ -83,10 +83,13 @@
 #define NVM_SW_CALIB_DFLL48M_COARSE_VAL   58
 #define NVM_SW_CALIB_DFLL48M_FINE_VAL     64
 
+#ifndef APPMODE
 static void check_start_application(void);
+#endif
 
 static volatile bool main_b_cdc_enable = false;
 
+#ifndef APPMODE
 /**
  * \brief Check the application startup condition
  *
@@ -169,13 +172,20 @@ static void check_start_application(void)
 	/* Jump to application Reset Handler in the application */
 	asm("bx %0"::"r"(app_start_address));
 }
+#endif // APPMODE
 
 void system_init()
 {
-	PORT->Group[1].DIRSET.reg = (1<<3);
+	PORT->Group[1].DIRSET.reg = (1<<3);  // PB03, yellow rx LED
 	PORT->Group[1].OUTSET.reg = (1<<3);
-	PORT->Group[0].DIRSET.reg = (1<<27);
+	PORT->Group[0].DIRSET.reg = (1<<27); // PA27, green tx LED
+#ifdef APPMODE
+	PORT->Group[0].OUTCLR.reg = (1<<27); // enable green LED
+	PORT->Group[0].DIRSET.reg = (1<<17); // PA17, blue LED
+	PORT->Group[0].OUTCLR.reg = (1<<17); // disable blue LED
+#else
 	PORT->Group[0].OUTSET.reg = (1<<27);
+#endif
 	/* Configure flash wait states */
 	NVMCTRL->CTRLB.bit.RWS = FLASH_WAIT_STATES;
 
@@ -262,13 +272,15 @@ void system_init()
  */
 int main(void)
 {
-#if SAM_BA_INTERFACE == SAM_BA_USBCDC_ONLY  ||  SAM_BA_INTERFACE == SAM_BA_BOTH_INTERFACES 
+#if SAM_BA_INTERFACE == SAM_BA_USBCDC_ONLY  ||  SAM_BA_INTERFACE == SAM_BA_BOTH_INTERFACES
 	P_USB_CDC pCdc;
 #endif
 	DEBUG_PIN_HIGH;
 
+#ifndef APPMODE /* always stay in bootloader if running as an app */
 	/* Jump in application if condition is satisfied */
 	check_start_application();
+#endif
 
 	/* We have determined we should stay in the monitor. */
 	/* System initialization */

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <limits.h>
 
 USBDevice_SAMD21G18x usbd;
@@ -192,7 +193,7 @@ bool USBDeviceClass::sendDescriptor(USBSetup &setup)
 {
 	uint8_t t = setup.wValueH;
 	uint8_t desc_length = 0;
-	bool _cdcComposite;
+	bool _cdcComposite = false;
 	int ret;
 	const uint8_t *desc_addr = 0;
 
@@ -244,7 +245,12 @@ bool USBDeviceClass::sendDescriptor(USBSetup &setup)
 			utox8(SERIAL_NUMBER_WORD_2, &name[16]);
 			utox8(SERIAL_NUMBER_WORD_3, &name[24]);
 
+#ifdef SOURCE_VERSION
+			static const char source_version[] = " " SOURCE_VERSION;
+			strncpy(&name[32], source_version, sizeof(name)-32);
+#else
 			PluggableUSB().getShortName(&name[32]);
+#endif
 			return sendStringDescriptor((uint8_t*)name, setup.wLength);
 #endif
 		}

@@ -239,7 +239,7 @@ Serial_::operator bool()
 		result = true;
 	}
 
-	delay(10);
+	//delay(10); // WILD: don't do this, it breaks application timing
 	return result;
 }
 
@@ -263,7 +263,7 @@ int32_t Serial_::readBreak() {
 	return ret;
 }
 
-unsigned long Serial_::baud() {
+uint32_t Serial_::baud() {
 	return _usbLineInfo.dwDTERate;
 }
 

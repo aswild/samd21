@@ -1,6 +1,7 @@
 #include "DigitalIO.h"
 #include "wiring_constants.h"
 #include "wiring_digital.h"
+#include "WInterrupts.h"
 
 /********************* DigitalOut *************************/
 DigitalOut::DigitalOut(uint32_t pin)
@@ -66,6 +67,21 @@ int DigitalIn::read(void)
 void DigitalIn::mode(uint32_t _mode)
 {
     pinMode(_pin, _mode);
+}
+
+void DigitalIn::add_interrupt(voidFuncPtr isr, uint32_t mode)
+{
+    attachInterrupt(_pin, isr, mode);
+}
+
+void DigitalIn::remove_interrupt(void)
+{
+    detachInterrupt(_pin);
+}
+
+void DigitalIn::set_interrupt_filter(bool filter)
+{
+    setInterruptFilter(_pin, filter);
 }
 
 DigitalIn::operator int()
