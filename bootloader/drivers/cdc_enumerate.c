@@ -34,6 +34,32 @@
 
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define SAFE_MIN(a, b) \
+    ({ typeof(a) _a = (a); \
+       typeof(b) _b = (b); \
+       _a < _b ? _a : _b; })
+
+static const char string_language[4] = {
+	0x04, // bLength - descriptor size (2 + 2)
+	0x03, // bDescriptorType - descriptor type
+	0x09, // English (0x0409)
+	0x04,
+};
+
+#ifndef USB_PRODUCT
+#define USB_PRODUCT "SAMD21 SAM-BA"
+#endif
+static const char usb_product_str[] = USB_PRODUCT;
+
+#ifndef USB_MANUFACTURER
+#define USB_MANUFACTURER "SparkFun"
+#endif
+static const char usb_manufacturer_str[] = USB_MANUFACTURER;
+
+#ifndef USB_SERIAL_NUM
+#define USB_SERIAL_NUM "ABCDE12345"
+#endif
+static const char usb_serial_num_str[] = USB_SERIAL_NUM;
 
 COMPILER_WORD_ALIGNED UsbDeviceDescriptor usb_endpoint_table[MAX_EP] = {0};
 COMPILER_WORD_ALIGNED uint8_t udd_ep_out_cache_buffer[2][64]; //1 for CTRL, 1 for BULK
@@ -56,9 +82,9 @@ const char devDescriptor[] = {
 	0x0D,   // idProductH
 	0x10,   // bcdDeviceL
 	0x01,   //
-	0x00,   // iManufacturer    // 0x01
-	0x00,   // iProduct
-	0x00,   // SerialNumber
+	0x01,   // iManufacturer    // 0x01
+	0x02,   // iProduct
+	0x03,   // SerialNumber
 	0x01    // bNumConfigs
 };
 
@@ -159,7 +185,7 @@ static usb_cdc_line_coding_t line_coding = {
   115200, // baudrate
   0,      // 1 Stop Bit
   0,      // None Parity
-  8     // 8 Data bits  
+  8     // 8 Data bits
 };
 
 static USB_CDC pCdc;
@@ -448,10 +474,10 @@ static uint32_t USB_Write(P_USB_CDC pCdc, const char *pData, uint32_t length, ui
 	pUsb->DEVICE.DeviceEndpoint[ep_num].EPINTFLAG.reg = USB_DEVICE_EPINTFLAG_TRCPT1;
 	/* Set the bank as ready */
 	pUsb->DEVICE.DeviceEndpoint[ep_num].EPSTATUSSET.bit.BK1RDY = true;
-	
+
 	/* Wait for transfer to complete */
 	while (!( pUsb->DEVICE.DeviceEndpoint[ep_num].EPINTFLAG.bit.TRCPT1));
-	
+
 	return length;
 }
 
@@ -501,6 +527,33 @@ void AT91F_USB_SendStall(Usb *pUsb, bool direction_in)
 }
 
 //*----------------------------------------------------------------------------
+//* \fn    AT91F_USB_SendStringDescriptor
+//* \brief Send a USB descriptor string.
+//* The string is stored as a plain ASCII string but is sent out as UTF-16
+//* with the correct 2-byte prefix.
+//*----------------------------------------------------------------------------
+static void AT91F_USB_SendStringDescriptor(P_USB_CDC pCdc, const char *string, uint16_t maxlen)
+{
+	uint8_t buffer[maxlen];
+	uint8_t i;
+
+	if (maxlen < 2) {
+		AT91F_USB_SendStall(pCdc->pUsb, true);
+		return;
+	}
+
+	buffer[0] = SAFE_MIN(strlen(string) * 2 + 2, maxlen);
+	buffer[1] = 0x03;
+
+	for (i = 2; i < maxlen && *string; i++) {
+		buffer[i++] = *string++;
+		if (i == maxlen) break;
+		buffer[i] = 0;
+	}
+	AT91F_USB_SendData(pCdc, (const char*)buffer, buffer[0]);
+}
+
+//*----------------------------------------------------------------------------
 //* \fn    AT91F_CDC_Enumerate
 //* \brief This function is a callback invoked when a SETUP packet is received
 //*----------------------------------------------------------------------------
@@ -536,6 +589,18 @@ void AT91F_CDC_Enumerate(P_USB_CDC pCdc)
 		else if (wValue == 0x200)
 			/* Return Configuration Descriptor */
 			AT91F_USB_SendData(pCdc, cfgDescriptor, MIN(sizeof(cfgDescriptor), wLength));
+		else if (wValue == 0x0300)
+			/* string language */
+			AT91F_USB_SendData(pCdc, string_language, MIN(sizeof(string_language), wLength));
+		else if (wValue == 0x0301)
+			/* Manufacturer */
+			AT91F_USB_SendStringDescriptor(pCdc, usb_manufacturer_str, wLength);
+		else if (wValue == 0x0302)
+			/* Product */
+			AT91F_USB_SendStringDescriptor(pCdc, usb_product_str, wLength);
+		else if (wValue == 0x0303)
+			/* Serial Number */
+			AT91F_USB_SendStringDescriptor(pCdc, usb_serial_num_str, wLength);
 		else
 			/* Stall the request */
 			AT91F_USB_SendStall(pUsb, true);
@@ -733,7 +798,7 @@ bool cdc_is_rx_ready(void)
 uint32_t cdc_write_buf(void const* data, uint32_t length)
 {
 	PORT->Group[0].OUTTGL.reg = (1<<27); // Toggle TX LED
-	
+
 	/* Send the specified number of bytes on USB CDC */
 	USB_Write(&pCdc, (const char *)data, length, USB_EP_IN);
 	return length;
@@ -742,7 +807,7 @@ uint32_t cdc_write_buf(void const* data, uint32_t length)
 uint32_t cdc_read_buf(void* data, uint32_t length)
 {
 	PORT->Group[1].OUTTGL.reg = (1<<3); // Toggle RX LED
-	
+
 	/* Check whether the device is configured */
 	if ( !USB_IsConfigured(&pCdc) )
 		return 0;

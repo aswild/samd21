@@ -2,6 +2,7 @@
 #define DIGITALIO_H
 
 #include <cstdint>
+#include "WInterrupts.h"
 
 class DigitalOut
 {
@@ -28,10 +29,14 @@ class DigitalIn
         DigitalIn(uint32_t pin, uint32_t _mode);
         int read(void);
         void mode(uint32_t mode);
+        void add_interrupt(voidFuncPtr isr, uint32_t mode);
+        void remove_interrupt(void);
+        void set_interrupt_filter(bool filter);
         operator int();
 
     protected:
         uint32_t _pin;
+
 };
 
 #endif

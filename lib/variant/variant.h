@@ -19,8 +19,9 @@
 #ifndef _VARIANT_ARDUINO_ZERO_
 #define _VARIANT_ARDUINO_ZERO_
 
-// The definitions here needs a SAMD core >=1.6.6
+// The definitions here needs a SAMD core >=1.6.10
 #define ARDUINO_SAMD_VARIANT_COMPLIANCE 10610
+#define ARDUINO_ARCH_SAMD
 
 /*----------------------------------------------------------------------------
  *        Definitions
