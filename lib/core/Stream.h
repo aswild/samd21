@@ -106,6 +106,7 @@ class Stream : public Print
   // Arduino String functions to be added here
   String readString();
   String readStringUntil(char terminator);
+  size_t readLine(char *buf, size_t bufsize, bool echo=false);
 
   protected:
   long parseInt(char ignore) { return parseInt(SKIP_ALL, ignore); }

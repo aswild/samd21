@@ -253,6 +253,53 @@ String Stream::readStringUntil(char terminator)
   return ret;
 }
 
+/*
+ * Read a line of text into the buffer until a CR, which is not saved in the buffer.
+ * If the buffer is filled before a CR, input continues to be accepted until a CR, and
+ * the buffer is truncated.
+ *
+ * If echo is true, echo back to the stream (echo a CRLF when a CR is received).
+ * Backspaces (\b) are supported, but no other line-editing.
+ *
+ * The string in buf will always be null-terminated.
+ * Returns the number of characters read (not including the CR or the nullbyte)
+ */
+size_t Stream::readLine(char *buf, size_t bufsize, bool echo)
+{
+  static const char CRLF[] = "\r\n";
+  size_t count = 0;
+  char c;
+
+  while (count < bufsize-1) {
+    while (!available()); // wait for input
+    c = read();
+    if (c == '\r') {
+      if (echo) print(CRLF);
+      break;
+    } else if (count && (c == '\b')) {
+      buf[--count] = '\0';
+      if (echo) print("\b \b");
+    } else {
+      buf[count++] = c;
+      if (echo) print(c);
+    }
+  }
+  buf[count] = '\0';
+  if (count == (bufsize-1) && c != '\r') {
+    // if buf is full but we didn't get a CR, wait for CR still but throw out data
+    while (true) {
+      while (!available());
+      c = read();
+      if (c == '\r') {
+        if (echo) print(CRLF);
+        break;
+      }
+      if (echo) print(c);
+    }
+  }
+  return count;
+}
+
 int Stream::findMulti( struct Stream::MultiTarget *targets, int tCount) {
   // any zero length target string automatically matches and would make
   // a mess of the rest of the algorithm.
