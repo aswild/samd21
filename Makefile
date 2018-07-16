@@ -1,6 +1,12 @@
 # Application Configuration
-TARGET = rn52-tunnel
 TARGET_OBJS = sketch.o
+
+GIT_BRANCH := $(shell git symbolic-ref HEAD 2>/dev/null | sed -n 's:^refs/heads/::p' | sed 's:/:_:g')
+ifneq ($(GIT_BRANCH),)
+TARGET = $(GIT_BRANCH)
+else
+TARGET = sketch
+endif
 
 # Directory Configuration
 OBJDIR      = obj
