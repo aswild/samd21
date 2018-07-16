@@ -172,6 +172,7 @@ class SERCOM
 		/* ========== SPI ========== */
 		void initSPI(SercomSpiTXPad mosi, SercomRXPad miso, SercomSpiCharSize charSize, SercomDataOrder dataOrder) ;
 		void initSPIClock(SercomSpiClockMode clockMode, uint32_t baudrate) ;
+		void setHardwareSsSPI(bool enable);
 
 		void resetSPI( void ) ;
 		void enableSPI( void ) ;

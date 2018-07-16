@@ -234,6 +234,19 @@ void SERCOM::initSPIClock(SercomSpiClockMode clockMode, uint32_t baudrate)
   sercom->SPI.BAUD.reg = calculateBaudrateSynchronous(baudrate);
 }
 
+void SERCOM::setHardwareSsSPI(bool enable)
+{
+  //Register enable-protected
+  disableSPI();
+
+  if (enable)
+    sercom->SPI.CTRLB.reg |= SERCOM_SPI_CTRLB_MSSEN;
+  else
+    sercom->SPI.CTRLB.reg &= ~SERCOM_SPI_CTRLB_MSSEN;
+
+  enableSPI();
+}
+
 void SERCOM::resetSPI()
 {
   //Setting the Software Reset bit to 1
