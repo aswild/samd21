@@ -205,6 +205,21 @@ void SPIClass::setClockDivider(uint8_t div)
   }
 }
 
+void SPIClass::setHardwareSs(bool enable, uint8_t pin)
+{
+  _p_sercom->setHardwareSsSPI(enable);
+
+  if (pin != 0xff) {
+    if (enable) {
+      // if this doesn't map to the right sercom function, user needs to handle this manually
+      pinPeripheral(pin, g_APinDescription[pin].ulPinType);
+    } else {
+      // switch back to an input
+      pinPeripheral(pin, PIO_INPUT);
+    }
+  }
+}
+
 byte SPIClass::transfer(uint8_t data)
 {
   return _p_sercom->transferDataSPI(data);
