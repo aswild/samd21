@@ -1,51 +1,32 @@
 #include "Arduino.h"
 #include "DigitalIO.h"
+#include "MCP41XXX.h"
 
-DigitalOut blue_led(13, HIGH);
-DigitalOut gpio9(17, HIGH);
+#include <stdlib.h> // for atoi()
 
-#if 0
-void Serial1_IrqHook(void)
-{
-    while (Serial1.available())
-        SerialUSB.write(Serial1.read());
-}
-#endif
+MCP41XXX pot(SPI, 1000000);
 
 void setup(void)
 {
-    Serial1.setRxBufferSize(256);
-    Serial1.begin(115200);
-
-    delay(100);
-    gpio9 = 0;
-
-    Serial1.flush();
-    delay(100);
-    while (Serial1.available())
-        Serial1.read();
-
     SerialUSB.begin(115200);
     while (!SerialUSB); // wait for USB host to open the port
-    SerialUSB.printf("\r\nSAMD%d Mini!\r\n", 21);
-    blue_led = 0;
+    SerialUSB.print("SAMD21 MCP41XXX DigiPot test\r\n");
+
+    pot.init();
+    SPI.setHardwareSs(true, 10);
 }
 
 void loop(void)
 {
-    while (Serial1.available())
-    {
-        while (Serial1.available())
-            SerialUSB.write(Serial1.read());
-        delay(10);
-    }
-
     SerialUSB.write("> ");
     char cmdbuf[16];
     size_t cmdlen = SerialUSB.readLine(cmdbuf, sizeof(cmdbuf), true);
-    if (cmdlen) {
+    if (cmdlen)
+    {
         //SerialUSB.printf("count=%u buf='%s'\r\n", cmdlen, cmdbuf);
-        Serial1.printf("%s\r", cmdbuf);
+        uint8_t pos = static_cast<uint8_t>(atoi(cmdbuf));
+        SerialUSB.printf("set wiper %u\r\n", pos);
+        pot.set_wiper(pos);
         delay(50);
     }
 }
