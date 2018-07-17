@@ -4,7 +4,7 @@
 
 #include <stdlib.h> // for atoi()
 
-MCP41XXX pot(SPI, 1000000);
+MCP41XXX pot(SPI, 10, 2000000);
 
 void setup(void)
 {
@@ -13,7 +13,7 @@ void setup(void)
     SerialUSB.print("SAMD21 MCP41XXX DigiPot test\r\n");
 
     pot.init();
-    SPI.setHardwareSs(true, 10);
+    //SPI.setHardwareSs(true, 10);
 }
 
 void loop(void)
@@ -24,7 +24,7 @@ void loop(void)
     if (cmdlen)
     {
         //SerialUSB.printf("count=%u buf='%s'\r\n", cmdlen, cmdbuf);
-        uint8_t pos = static_cast<uint8_t>(atoi(cmdbuf));
+        uint8_t pos = static_cast<uint8_t>(strtoul(cmdbuf, NULL, 0));
         SerialUSB.printf("set wiper %u\r\n", pos);
         pot.set_wiper(pos);
         delay(50);
