@@ -4,18 +4,26 @@
 #include <stdlib.h> // for strtoul()
 
 DigitalOut status_led(13);
-DigitalOut led(10);
 DigitalIn button(9);
 
 // 65536*1024 / 48MHz = 1.398101s = 1398101us
 #define MAX_PULSE_US ((65536ul * 1024ul) / (F_CPU / 1000000ul))
 
-static void get_prescaler_cc(uint32_t pulse_us, uint32_t *pprescaler, uint16_t *pcc)
+static void timer_calculate_prescaler(uint32_t pulse_us, uint32_t *pprescaler, uint16_t *pcc)
 {
-    // adapted from Tone.cpp
-    uint32_t prescaler;
-    uint32_t cc = 0xffff+1;
-    int i = -1;
+    static const struct {
+        uint32_t scale;
+        uint32_t prescale;
+    } prescaler_table[8] = {
+        { 1 <<  0, TC_CTRLA_PRESCALER_DIV1 },
+        { 1 <<  1, TC_CTRLA_PRESCALER_DIV2 },
+        { 1 <<  2, TC_CTRLA_PRESCALER_DIV4 },
+        { 1 <<  3, TC_CTRLA_PRESCALER_DIV8 },
+        { 1 <<  4, TC_CTRLA_PRESCALER_DIV16 },
+        { 1 <<  6, TC_CTRLA_PRESCALER_DIV64 },
+        { 1 <<  8, TC_CTRLA_PRESCALER_DIV256 },
+        { 1 << 10, TC_CTRLA_PRESCALER_DIV1024 },
+    };
 
     if (pulse_us >= MAX_PULSE_US)
     {
@@ -26,29 +34,16 @@ static void get_prescaler_cc(uint32_t pulse_us, uint32_t *pprescaler, uint16_t *
         return;
     }
 
-    while (cc > 0xfffful)
+    uint32_t cc;
+    unsigned int i;
+    for (i = 0; i < 8; i++)
     {
-        i++;
-        if (i == 5 || i == 7 || i == 9) // no prescaler for 32/128/512
-            i++;
-        cc = (pulse_us * (F_CPU / 1000000)) / (1<<i) - 1;
-        SerialUSB.printf("get_prescaler: i=%d, cc=%lu\r\n", i, cc);
+        cc = (pulse_us * (F_CPU / 1000000)) / prescaler_table[i].scale - 1;
+        if (cc < 65536)
+            break;
     }
 
-    switch (i)
-    {
-        case  0: prescaler = TC_CTRLA_PRESCALER_DIV1;    break;
-        case  1: prescaler = TC_CTRLA_PRESCALER_DIV2;    break;
-        case  2: prescaler = TC_CTRLA_PRESCALER_DIV4;    break;
-        case  3: prescaler = TC_CTRLA_PRESCALER_DIV8;    break;
-        case  4: prescaler = TC_CTRLA_PRESCALER_DIV16;   break;
-        case  6: prescaler = TC_CTRLA_PRESCALER_DIV64;   break;
-        case  8: prescaler = TC_CTRLA_PRESCALER_DIV256;  break;
-        case 10: prescaler = TC_CTRLA_PRESCALER_DIV1024; break;
-        default: break;
-    }
-
-    *pprescaler = prescaler;
+    *pprescaler = prescaler_table[i].prescale;
     *pcc = static_cast<uint16_t>(cc);
 }
 
@@ -70,11 +65,11 @@ static inline void timer_start(void)
     TC5->COUNT16.CTRLBSET.reg = TC_CTRLBSET_CMD_RETRIGGER;
 }
 
-static inline void timer_set_timeout(uint32_t pulse_us)
+static void timer_set_timeout(uint32_t pulse_us)
 {
     uint32_t prescaler;
     uint16_t cc;
-    get_prescaler_cc(pulse_us, &prescaler, &cc);
+    timer_calculate_prescaler(pulse_us, &prescaler, &cc);
     if (SerialUSB)
         SerialUSB.printf("set timeout %luus: prescaler=%lu, CC=%u\r\n",
                 pulse_us, prescaler >> TC_CTRLA_PRESCALER_Pos, cc);
@@ -108,9 +103,8 @@ static void timer_init(void)
     TC5->COUNT16.CTRLA.reg &= ~TC_CTRLA_ENABLE;
     timer_sync();
     TC5->COUNT16.CTRLA.reg = TC_CTRLA_SWRST;
-    while (TC5->COUNT16.CTRLA.bit.SWRST);
     timer_sync();
-    status_led = 0;
+    while (TC5->COUNT16.CTRLA.bit.SWRST);
 
     // setup CTRLA reg
     TC5->COUNT16.CTRLA.reg |=
@@ -141,16 +135,14 @@ static void timer_init(void)
 
 void TC5_Handler(void)
 {
-    //led = 0;
     PORT->Group[0].OUTCLR.reg = 1 << 18; // fast clear pin 10 PA18
 
     // clear interrupt flag
-    TC5->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF | TC_INTFLAG_MC0;
+    TC5->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
 }
 
 void button_isr(void)
 {
-    //led = 1;
     PORT->Group[0].OUTSET.reg = 1 << 18; // fast set pin 10 PA18
     timer_start();
 }
@@ -158,12 +150,13 @@ void button_isr(void)
 void setup(void)
 {
     status_led = 1;
+    pinMode(10, OUTPUT);
+    digitalWrite(10, 0);
     timer_init();
-    status_led = 0;
-    timer_set_timeout(50);
 
     button.mode(INPUT);
     button.add_interrupt(button_isr, FALLING);
+    status_led = 0;
 
     SerialUSB.begin(115200);
     while (!SerialUSB); // wait for USB host to open the port
