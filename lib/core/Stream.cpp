@@ -268,7 +268,7 @@ size_t Stream::readLine(char *buf, size_t bufsize, bool echo)
 {
   static const char CRLF[] = "\r\n";
   size_t count = 0;
-  char c;
+  char c = 0;
 
   while (count < bufsize-1) {
     while (!available()); // wait for input
