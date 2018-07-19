@@ -15,7 +15,7 @@ CORE        = core
 # all these directories will be used as CPP include paths, and
 # all c/cpp/S sources will be compiled into libcore
 LIBRARIES   = variant $(CORE) $(CORE)/USB
-LIBRARIES  += Adafruit_ZeroDMA DigitalIO MPR121 Neostrip SPI Wire
+LIBRARIES  += Adafruit_ZeroDMA DigitalIO MPR121 Neostrip SPI Timeout Wire
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
 COREINCS    = $(addprefix -I,$(CORESRCDIRS))
