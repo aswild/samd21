@@ -1,12 +1,42 @@
-# Application Configuration
-TARGET_OBJS = sketch.o
+########################################################################
+# Arduino SAMD21 Makefile
+#
+# Copyright 2018 Allen Wild <allenwild93@gmail.com>
+########################################################################
 
-GIT_BRANCH := $(shell git symbolic-ref HEAD 2>/dev/null | sed -n 's:^refs/heads/::p' | sed 's:/:_:g')
-ifneq ($(GIT_BRANCH),)
-TARGET = $(GIT_BRANCH)
-else
-TARGET = sketch
+# If a sketch subdir makefile set SKETCH, use it as an override.
+# This lets config.mk define a default sketch, but running make from
+# a sketch subdir will take precedence over that.
+ifeq ($(SKETCH_FROM_SUBDIR),1)
+override SKETCH := $(SKETCH)
 endif
+
+# allow for persistent config
+-include config.mk
+
+# Logic to figure out sketch name. (unless running make clean)
+# S=<something> on the command line overrides everything else
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+ifneq ($(S),)
+ifeq ($(origin S),command line)
+override SKETCH := $(S)
+endif
+endif
+# here we allow SKETCH to be set externally via other means (environment, config.mk)
+# if still empty, fall back to S
+ifeq ($(SKETCH),)
+ifneq ($(S),)
+SKETCH := $(S)
+endif
+endif
+# confirm that SKETCH is set
+ifeq ($(SKETCH),)
+$(error S or SKETCH must be defined to use this Makefile)
+endif
+endif # clean
+
+# TARGET is typically the sketch name, but could be overridden I guess
+TARGET     := $(SKETCH)
 
 # Directory Configuration
 OBJDIR      = obj
@@ -62,8 +92,8 @@ GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
 SOURCE_VERSION := $(shell bin/get_version.sh --branch)
 
-LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON $(COREINCS) -DSOURCE_VERSION='"$(SOURCE_VERSION)"'
-LCPPFLAGS  += -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON -DSOURCE_VERSION='"$(SOURCE_VERSION)"'
+LCPPFLAGS  += -I$(SKETCH) $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 LCPPFLAGS  += -MMD -MP
 
 # used everywhere
@@ -122,35 +152,52 @@ override $(1) := $$(strip $$(L$(1)) $$($(1)))
 endef
 $(foreach f,CPPFLAGS CFLAGS CXXFLAGS ASFLAGS LDFLAGS LIBS,$(eval $(call override_flags,$(f))))
 
-vpath %.c   $(CORESRCDIRS)
-vpath %.cpp $(CORESRCDIRS)
-vpath %.S   $(CORESRCDIRS)
+# don't look for a sketch when running make clean
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+ifneq ($(findstring newsketch,$(MAKECMDGOALS)),newsketch)
+TARGET_CC_SRC  = $(notdir $(wildcard $(SKETCH)/*.c))
+TARGET_CXX_SRC = $(notdir $(wildcard $(SKETCH)/*.cpp))
+TARGET_AS_SRC  = $(notdir $(wildcard $(SKETCH)/*.S))
+
+TARGET_OBJ = $(patsubst %.cpp,$(OBJDIR)/%.o,$(TARGET_CXX_SRC)) \
+             $(patsubst %.c,$(OBJDIR)/%.o,$(TARGET_CC_SRC)) \
+             $(patsubst %.S,$(OBJDIR)/%.o,$(TARGET_AS_SRC))
+
+ifeq ($(strip $(TARGET_OBJ)),)
+$(error No source files found for sketch $(SKETCH))
+endif
+endif
+endif
 
 CORE_CC_SRC  = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.c)))
 CORE_CXX_SRC = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.cpp)))
 CORE_AS_SRC  = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.S)))
 
-CORE_OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(CORE_CXX_SRC)) \
-            $(patsubst %.c,$(OBJDIR)/%.o,$(CORE_CC_SRC)) \
-            $(patsubst %.S,$(OBJDIR)/%.o,$(CORE_AS_SRC))
+CORE_OBJ = $(patsubst %.cpp,$(OBJDIR)/%.o,$(CORE_CXX_SRC)) \
+           $(patsubst %.c,$(OBJDIR)/%.o,$(CORE_CC_SRC)) \
+           $(patsubst %.S,$(OBJDIR)/%.o,$(CORE_AS_SRC))
 
-_TARGET_OBJ = $(patsubst %,$(OBJDIR)/%,$(TARGET_OBJS))
 TARGET_ELF  = $(OBJDIR)/$(TARGET).elf
 TARGET_BIN  = $(OBJDIR)/$(TARGET).bin
 TARGET_HEX  = $(OBJDIR)/$(TARGET).hex
 
 V ?= 0
-_V_CC_0     = @echo "  CC      " $<;
-_V_CXX_0    = @echo "  CXX     " $<;
-_V_AS_0     = @echo "  AS      " $<;
-_V_LD_0     = @echo "  LD      " $@;
-_V_AR_0     = @echo "  AR      " $@;
-_V_BIN_0    = @echo "  BIN     " $@;
-_V_HEX_0    = @echo "  HEX     " $@;
-_V_SIZE_0   = @echo "Program Size:";
-_V_RESET_0  = @echo "  RESET   " $(COMPORT);
-_V_UPLOAD_0 = @echo "  UPLOAD  " $<;
-_V_CLEAN_0  = @echo "  CLEAN";
+_V_CC_0        = @echo "  CC      " $<;
+_V_CXX_0       = @echo "  CXX     " $<;
+_V_AS_0        = @echo "  AS      " $<;
+_V_LD_0        = @echo "  LD      " $@;
+_V_AR_0        = @echo "  AR      " $@;
+_V_BIN_0       = @echo "  BIN     " $@;
+_V_HEX_0       = @echo "  HEX     " $@;
+_V_SIZE_0      = @echo "Program Size:";
+_V_RESET_0     = @echo "  RESET   " $(COMPORT);
+_V_UPLOAD_0    = @echo "  UPLOAD  " $<;
+_V_CLEAN_0     = @echo "  CLEAN";
+_V_DISTCLEAN_0 = @echo "  DISTCLEAN";
+
+vpath %.c   $(SKETCH) $(CORESRCDIRS)
+vpath %.cpp $(SKETCH) $(CORESRCDIRS)
+vpath %.S   $(SKETCH) $(CORESRCDIRS)
 
 .PHONY: all
 all: $(TARGET_BIN) .size_done
@@ -173,12 +220,27 @@ upload: $(TARGET_BIN) all
 clean:
 	$(_V_CLEAN_$(V))rm -rf $(OBJDIR) .size_done
 
+.PHONY: distclean
+distclean: clean
+	$(_V_DISTCLEAN_$(V))rm -f config.mk
+
+.PHONY: config
+config:
+	if [ -f config.mk ]; then sed -i '/^SKETCH\b/d' config.mk; fi
+	echo 'SKETCH = $(SKETCH)' >>config.mk
+
 .PHONY: gdb
 gdb: $(TARGET_ELF)
 	$(GDB) -q $(TARGET_ELF) -ex "target extended-remote :2331" -ex "load" -ex "mon reset"
 
-$(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
-	$(_V_LD_$(V))$(CCLD) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
+.PHONY: newsketch
+newsketch:
+	mkdir $(SKETCH)
+	cp lib/sketch-template.cpp $(SKETCH)/$(SKETCH).cpp
+	ln -s ../lib/Makefile.sketch $(SKETCH)/Makefile
+
+$(TARGET_ELF): $(TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
+	$(_V_LD_$(V))$(CCLD) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
 
 $(TARGET_BIN): $(TARGET_ELF)
 	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
@@ -198,7 +260,7 @@ $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 $(OBJDIR)/%.o: %.S | $(OBJDIR)
 	$(_V_AS_$(V))$(AS) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
 
-$(CORELIB): $(CORE_OBJS)
+$(CORELIB): $(CORE_OBJ)
 	$(_V_AR_$(V))$(AR) rcs $@ $^
 
 -include $(wildcard $(OBJDIR)/*.d)

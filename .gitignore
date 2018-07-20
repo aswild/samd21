@@ -1,4 +1,5 @@
 /obj
+/config.mk
 .size_done
 
 *.o

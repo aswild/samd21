@@ -1,0 +1,23 @@
+# Makefile stub for running "make" from within a sketch directory
+
+export SKETCH := $(notdir $(CURDIR))
+export SKETCH_FROM_SUBDIR := 1
+
+ifneq ($(MAKECMDGOALS),)
+GOALS = $(MAKECMDGOALS)
+else
+GOALS = all
+endif
+
+V ?= 0
+ifeq ($(V),0)
+SUBMAKE_CMD = @$(MAKE) --no-print-directory -C .. $(GOALS)
+else
+SUBMAKE_CMD = $(MAKE) -C .. $(GOALS)
+endif
+
+.PHONY: submake
+submake:
+	+$(SUBMAKE_CMD)
+
+$(MAKECMDGOALS): submake
