@@ -25,6 +25,9 @@
 
 #include "WVariant.h"
 
+#define PORT_SET_FAST(_port, _pin) do { PORT->Group[_port].OUTSET.reg = 1UL << (_pin); } while (0)
+#define PORT_CLR_FAST(_port, _pin) do { PORT->Group[_port].OUTCLR.reg = 1UL << (_pin); } while (0)
+
 /**
  * \brief Configures the specified pin to behave either as an input or an output. See the description of digital pins for details.
  *
