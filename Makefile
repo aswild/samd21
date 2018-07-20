@@ -239,6 +239,14 @@ newsketch:
 	cp lib/sketch-template.cpp $(SKETCH)/$(SKETCH).cpp
 	ln -s ../lib/Makefile.sketch $(SKETCH)/Makefile
 
+.PHONY: dis
+dis: $(TARGET_ELF)
+	@$(OBJDUMP) -d $(TARGET_ELF)
+
+.PHONY: disvim
+disvim: $(TARGET_ELF)
+	$(OBJDUMP) -d $(TARGET_ELF) | vim -R -c ':set ft=asm' -
+
 $(TARGET_ELF): $(TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
 	$(_V_LD_$(V))$(CCLD) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
 
