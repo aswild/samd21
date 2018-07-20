@@ -177,6 +177,14 @@ clean:
 gdb: $(TARGET_ELF)
 	$(GDB) -q $(TARGET_ELF) -ex "target extended-remote :2331" -ex "load" -ex "mon reset"
 
+.PHONY: dis
+dis: $(TARGET_ELF)
+	@$(OBJDUMP) -d $(TARGET_ELF)
+
+.PHONY: disvim
+disvim: $(TARGET_ELF)
+	$(OBJDUMP) -d $(TARGET_ELF) | vim -R -c ':set ft=asm' -
+
 $(TARGET_ELF): $(_TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
 	$(_V_LD_$(V))$(CCLD) $(LDFLAGS) -o $@ $(_TARGET_OBJ) -Wl,--as-needed $(LIBS)
 
