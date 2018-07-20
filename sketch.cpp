@@ -12,6 +12,20 @@
 #define ADC_SETB(_reg, _val) do { ADC->_reg.reg |= (_val); ADC_SYNC(); } while(0)
 #define ADC_CLRB(_reg, _val) do { ADC->_reg.reg &= ~(_val); ADC_SYNC(); } while(0)
 
+#define DEBUG
+#define DEBUG_PORT 0
+#define DEBUG_PIN  2
+
+#ifdef DEBUG
+#define DBGINIT() do { PORT->Group[DEBUG_PORT].DIRSET.reg = 1UL << (DEBUG_PIN); } while(0)
+#define DBGHIGH() PORT_SET_FAST(DEBUG_PORT, DEBUG_PIN)
+#define DBGLOW()  PORT_CLR_FAST(DEBUG_PORT, DEBUG_PIN)
+#else
+#define DBGINIT() do{}while(0)
+#define DBGHIGH() do{}while(0)
+#define DBGLOW() do{}while(0)
+#endif
+
 static void adc_init(void)
 {
     // SystemInit() handles setting the ADC calibration values from NVM
@@ -63,15 +77,15 @@ static void adc_init(void)
 static uint32_t adc_read(void)
 {
     ADC_SETB(SWTRIG, ADC_SWTRIG_START);
-    PORT->Group[0].OUTSET.reg = 1<<2; // fast-set pin 14 PA02
+    DBGHIGH();
     while (!ADC->INTFLAG.bit.RESRDY);
-    PORT->Group[0].OUTCLR.reg = 1<<2; // fast-clear pin 14 PA02
+    DBGLOW();
     return ADC_GETR(RESULT);
 }
 
 void setup(void)
 {
-    pinMode(14, OUTPUT);
+    DBGINIT();
     pinPeripheral(ADC_PIN, PIO_ANALOG);
     adc_init();
 
