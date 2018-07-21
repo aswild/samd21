@@ -134,9 +134,6 @@ uint8_t MPR121::read(uint8_t reg)
     // Re-send the target address in read mode
     i2c.requestFrom(address, 1);
 
-    // wait for response data
-    while (!i2c.available());
-
     // Read in the result
     data = i2c.read();
 
@@ -152,9 +149,6 @@ size_t MPR121::readMany(uint8_t start, uint8_t *dataSet, size_t length)
 
     // initiate read (SW buffered)
     i2c.requestFrom(address, length);
-
-    // wait for response data
-    while (!i2c.available());
 
     // read response (from SW buffer)
     size_t i;
