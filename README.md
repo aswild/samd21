@@ -3,8 +3,9 @@
 I only have one Arduino board, so why have tons of dependencies and generic
 build scripts for tons of targets?
 
-This project builds for the [SparkFun SAMD21 Mini Breakout](https://www.sparkfun.com/products/13664)
-board, which is a SAMD21G18A board compatible with the Arduino Zero.
+This project builds for the [SparkFun SAMD21 Mini Breakout](https://www.sparkfun.com/products/13664),
+a SAMD21G18A board compatible with the Arduino Zero. It should be usable for other
+SAMD21 boards with minimal tweaking.
 
 I started with the Arduino IDE to get the SAMD boards and SparkFun board
 definitions and the [Arduino-Makefile](https://github.com/sudar/Arduino-Makefile)
@@ -105,3 +106,13 @@ project, then adapted the parts I need into my own Makefile.
 - jlink-software-and-documentation (AUR) 12:6.32h-0
   - GDB server for [JLink SWD programmer](https://www.segger.com/products/debug-probes/j-link/models/j-link-edu-mini/)
   - Awesome hardware programmer/debugger for only $20!
+
+## License
+- Most core libraries are licensed under the GNU Lesser General Public License
+  Version 2.1
+- Some libraries and header files are licensed under an MIT or BSD-style license
+- My application sketches and Makefiles are licensed under the GNU General Public
+  License Version 3
+- Refer to individual source files for specific copyright and license details
+- Copies of the LGPLv2.1 and GPLv3 license text are avilable in the `docs/`
+  directory of this repository
