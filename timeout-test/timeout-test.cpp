@@ -23,23 +23,28 @@
 
 #include <stdlib.h> // for strtoul()
 
+#define DEBUG_PORT 0
+#define DEBUG_PIN  17
+#include "debug_macros.h"
+
 DigitalOut status_led(13);
 DigitalIn button(9);
 
 static void timeout_isr(void)
 {
-    PORT->Group[0].OUTCLR.reg = 1 << 18; // fast clear pin 10 PA18
+    DBGLOW();
 }
 
 static void button_isr(void)
 {
-    PORT->Group[0].OUTSET.reg = 1 << 18; // fast set pin 10 PA18
+    DBGHIGH();
     timeout_start();
 }
 
 void setup(void)
 {
     status_led = 1;
+    DBGINIT();
     pinMode(10, OUTPUT);
     digitalWrite(10, 0);
     timeout_init();
