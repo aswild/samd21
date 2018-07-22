@@ -22,6 +22,11 @@
 
 #define ADC_PIN A2
 
+// found for my board using the SAMD_AnalogCorrection sketch
+#define ADC_OFFSET_CORRECTION 10
+#define ADC_GAIN_CORRECTION   2054
+//#define ADC_GAIN_CORRECTION   2050
+
 #define ASCALE (3.3 / 4096)
 //#define ASCALE (3.3 / 65536)
 
@@ -57,6 +62,11 @@ static void adc_init(void)
 
     // set 512x prescaler, 12-bit precision
     ADC_SETR(CTRLB, ADC_CTRLB_PRESCALER_DIV512 | ADC_CTRLB_RESSEL_12BIT);
+#if defined(ADC_OFFSET_CORRECTION) && defined(ADC_GAIN_CORRECTION)
+    ADC->OFFSETCORR.reg = ADC_OFFSETCORR_OFFSETCORR(ADC_OFFSET_CORRECTION);
+    ADC->GAINCORR.reg = ADC_GAINCORR_GAINCORR(ADC_GAIN_CORRECTION);
+    ADC_SETB(CTRLB, ADC_CTRLB_CORREN);
+#endif
 
     // maximum sampling time (more accurate but slower)
     ADC_SETR(SAMPCTRL, 0x3f);
