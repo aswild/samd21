@@ -25,6 +25,7 @@
 #include <cstring>
 #include "SPI.h"
 #include "Adafruit_ZeroDMA.h"
+#include "Color.h"
 
 // define this before including bittable.h
 #define NEOSTRIP_OUTPUT_INVERT 1
@@ -44,24 +45,6 @@ static const uint8_t dma_zero_byte __attribute__((used)) = 0x00;
 // For a 2.4MHz clock, this is exactly 15. For other values, it might round down but
 // that is OK because the WS2812 doesn't need a full 50us to reset.
 static const size_t dma_zero_n_bytes = (NEOSTRIP_SPI_CLOCK * 50) / (1000000 * 8);
-
-typedef union __attribute__((packed)) {
-    struct {
-        uint8_t blue;
-        uint8_t green;
-        uint8_t red;
-    } b;
-    uint32_t i;
-} Color;
-
-static const Color BLACK    = { .i = 0x000000 };
-static const Color WHITE    = { .i = 0xFFFFFF };
-static const Color RED      = { .i = 0xFF0000 };
-static const Color YELLOW   = { .i = 0xFFFF00 };
-static const Color GREEN    = { .i = 0x00FF00 };
-static const Color CYAN     = { .i = 0x00FFFF };
-static const Color BLUE     = { .i = 0x0000FF };
-static const Color MAGENTA  = { .i = 0xFF00FF };
 
 static inline uint8_t get_trigger(SERCOM *_s)
 {
