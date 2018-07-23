@@ -68,7 +68,7 @@ template <size_t N>
 class Neostrip
 {
     public:
-        Neostrip(SPIClass& _spi) : spi(_spi), brightness(256)
+        Neostrip(SPIClass& _spi, int _brightness=25) : spi(_spi), brightness(_brightness)
         {
             memset(colors, 0, sizeof(colors));
             memset(rawcolors, 0, sizeof(rawcolors));
@@ -132,6 +132,13 @@ class Neostrip
             colors[index] = color;
         }
 
+        void set_color(size_t index, uint32_t color_int)
+        {
+            Color c;
+            c.i = color_int;
+            set_color(index, c);
+        }
+
         void set_all_colors(const Color& color)
         {
             for (size_t i = 0; i < N; i++)
@@ -139,6 +146,13 @@ class Neostrip
         }
 
         void clear(void) { set_all_colors(BLACK); }
+
+        Color get_color(size_t index) const
+        {
+            if (index < 0 || index >= N)
+                return BLACK;
+            return colors[index];
+        }
 
         // brightness logic from Adafruit_NeoPixel_ZeroDMA.
         // 0-255 values are stored internally as 1-256
