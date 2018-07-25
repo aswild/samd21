@@ -27,7 +27,7 @@
 #include "debug_macros.h"
 
 #include "Neostrip.h"
-#include "gradient.h"
+#include "animation.h"
 
 #define RANDOM_SEED  0xa1e600
 #define STRIP_LENGTH 32
@@ -36,55 +36,33 @@
 DigitalOut blue_led(13);
 Neostrip<STRIP_LENGTH> ns(SPI, BRIGHTNESS);
 
-static int colors[GRADIENT_SIZE];
-
-static inline int gradient_clamp(int index)
-{
-    if (index < 0)
-        return 0;
-    if (index > GRADIENT_SIZE-1)
-        return GRADIENT_SIZE-1;
-    return index;
-}
-
-static void set_colors(void)
-{
-    for (size_t i = 0; i < STRIP_LENGTH; i++)
-        ns.set_color(i, gradient[colors[i]]);
-}
-
 void setup(void)
 {
     blue_led = 1;
-    srand(RANDOM_SEED);
+    //srand(RANDOM_SEED);
 
     ns.init();
+    ns.clear();
     DBGINIT();
     pinPeripheral(13, PIO_OUTPUT);
-
-    for (size_t i = 0; i < STRIP_LENGTH; i++)
-    {
-        colors[i] = random() % GRADIENT_SIZE;
-    }
-    set_colors();
-    ns.write();
 
     blue_led = 0;
 }
 
 void loop(void)
 {
+    static size_t frame = 0;
     ns.write(false); // don't wait for tranfer complete (long delay soon)
 
     DBGHIGH();
     for (size_t i = 0; i < STRIP_LENGTH; i++)
     {
-#define RANDOM_RANGE 31
-        int delta = (random() % RANDOM_RANGE) - (RANDOM_RANGE / 2);
-        colors[i] = gradient_clamp(colors[i] + delta);
+        uint8_t p = animation_pdata[ANIMATION_WIDTH*ANIMATION_HEIGHT*frame + i];
+        ns.set_color(i, animation_pallette[p]);
     }
-    set_colors();
     DBGLOW();
+    if (++frame >= ANIMATION_NFRAMES)
+        frame = 0;
 
-    delay(60);
+    delay(100);
 }
