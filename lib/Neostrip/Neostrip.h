@@ -35,18 +35,18 @@
 
 // DMA source address to wait for the latch
 #if NEOSTRIP_OUTPUT_INVERT
-static const uint8_t dma_zero_byte __attribute__((used)) = 0xFF;
+static const uint8_t neostrip_idle_byte __attribute__((used)) = 0xFF;
 #else
-static const uint8_t dma_zero_byte __attribute__((used)) = 0x00;
+static const uint8_t neostrip_idle_byte __attribute__((used)) = 0x00;
 #endif
 
 // number of bytes needed to "transfer" low for the 50us latch
 // bits/sec * sec * bytes/bit = bytes
 // For a 2.4MHz clock, this is exactly 15. For other values, it might round down but
 // that is OK because the WS2812 doesn't need a full 50us to reset.
-static const size_t dma_zero_n_bytes = (NEOSTRIP_SPI_CLOCK * 50) / (1000000 * 8);
+static const size_t neostrip_dma_zero_n_bytes = (NEOSTRIP_SPI_CLOCK * 50) / (1000000 * 8);
 
-static inline uint8_t get_trigger(SERCOM *_s)
+static inline uint8_t neostrip_get_dma_sercom_trigger(SERCOM *_s)
 {
     Sercom *s = _s->getSercom();
     if (s == SERCOM0)
@@ -79,7 +79,7 @@ class Neostrip
             void *spi_data_reg = (void*)(&spi.getSERCOM()->getSercom()->SPI.DATA.reg);
             spi.begin();
 
-            dma.setTrigger(get_trigger(spi.getSERCOM()));
+            dma.setTrigger(neostrip_get_dma_sercom_trigger(spi.getSERCOM()));
             dma.setAction(DMA_TRIGGER_ACTON_BEAT);
             dma.allocate();
             dma.loop(false);
@@ -93,11 +93,11 @@ class Neostrip
 
             // 50us latch descriptor
             dma.addDescriptor(
-                    (void*)(&dma_zero_byte),    // source address
-                    spi_data_reg,               // dest address
-                    dma_zero_n_bytes,           // data length
-                    DMA_BEAT_SIZE_BYTE,         // beat size
-                    false, false);              // don't increment src or dest addresses
+                    (void*)(&neostrip_idle_byte), // source address
+                    spi_data_reg,                 // dest address
+                    neostrip_dma_zero_n_bytes,    // data length
+                    DMA_BEAT_SIZE_BYTE,           // beat size
+                    false, false);                // don't increment src or dest addresses
 
             dma.setCallback(dma_complete_callback, DMA_CALLBACK_TRANSFER_DONE, this);
 
