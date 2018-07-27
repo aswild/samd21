@@ -31,14 +31,42 @@
 
 #define RANDOM_SEED  0xa1e600
 #define STRIP_LENGTH 32
-#define BRIGHTNESS   15
+#define BRIGHTNESS   ((30 * 255) / 100)
 
 DigitalOut blue_led(13);
 Neostrip<STRIP_LENGTH> ns(SPI, BRIGHTNESS);
 
-static int colors[GRADIENT_SIZE];
+DigitalIn button1(7, INPUT_PULLUP);
+DigitalIn button2(8, INPUT_PULLUP);
 
-static inline int gradient_clamp(int index)
+static uint8_t colors[GRADIENT_SIZE];
+
+static volatile int brightness = BRIGHTNESS;
+static void brightness_up(void)
+{
+    brightness += 15;
+}
+static void brightness_down(void)
+{
+    brightness -= 15;
+}
+static inline uint8_t clamp_brightness(void)
+{
+    __disable_irq();
+    int b = brightness;
+    if (b < 0)
+    {
+        b = brightness = 0;
+    }
+    if (b > 255)
+    {
+        b = brightness = 255;
+    }
+    __enable_irq();
+    return (uint8_t)b;
+}
+
+static inline uint8_t gradient_clamp(int index)
 {
     if (index < 0)
         return 0;
@@ -50,12 +78,14 @@ static inline int gradient_clamp(int index)
 static void set_colors(void)
 {
     for (size_t i = 0; i < STRIP_LENGTH; i++)
-        ns.set_color(i, gradient[colors[i]]);
+        ns.set_color(i, gradient_data[colors[i]]);
 }
 
 void setup(void)
 {
     blue_led = 1;
+    button1.add_interrupt(brightness_up, FALLING);
+    button2.add_interrupt(brightness_down, FALLING);
     srand(RANDOM_SEED);
 
     ns.init();
@@ -74,17 +104,18 @@ void setup(void)
 
 void loop(void)
 {
+    ns.set_brightness(clamp_brightness());
     ns.write(false); // don't wait for tranfer complete (long delay soon)
 
     DBGHIGH();
     for (size_t i = 0; i < STRIP_LENGTH; i++)
     {
-#define RANDOM_RANGE 31
+#define RANDOM_RANGE 41
         int delta = (random() % RANDOM_RANGE) - (RANDOM_RANGE / 2);
         colors[i] = gradient_clamp(colors[i] + delta);
     }
     set_colors();
     DBGLOW();
 
-    delay(60);
+    delay(100);
 }
