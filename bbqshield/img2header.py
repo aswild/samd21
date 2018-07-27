@@ -23,7 +23,7 @@ def get_image_data(imgfile, first_row):
             data = [d[:3] for d in data]
         if first_row:
             out.height = 1
-            out.data = data[:data.width]
+            out.data = data[:out.width]
         else:
             out.height = img.height
             out.data = data
@@ -32,11 +32,11 @@ def get_image_data(imgfile, first_row):
 def format_array_data(data):
     with StringIO() as out:
         for i, d in enumerate(data.data):
-            if i % data.width == 0:
+            if data.height == 1 or i % data.width == 0:
                 out.write('   ')
             out.write(' { .i = 0x%06x },'%(
                 ((d[0] & 0xff) << 16) | ((d[1] & 0xff) << 8) | (d[2] & 0xff)))
-            if i % data.width == (data.width - 1):
+            if data.height == 1 or i % data.width == (data.width - 1):
                 out.write('\n')
         return out.getvalue()
 
