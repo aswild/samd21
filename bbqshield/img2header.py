@@ -44,7 +44,8 @@ def emit_image_header(outfile, name, d):
     s = """\
         #define {0}_WIDTH {1}
         #define {0}_HEIGHT {2}
-        static const Color {3}_data[{0}_WIDTH * {0}_HEIGHT] = """
+        #define {0}_SIZE ({0}_WIDTH * {0}_HEIGHT)
+        static const Color {3}_data[{0}_SIZE] = """
     # closing brace on its own line to avoid confusing .format() and vim
     outfile.write(dedent(s.format(name, d.width, d.height, name.lower())) + "{\n")
     outfile.write(format_array_data(d))
