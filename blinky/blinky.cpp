@@ -21,6 +21,9 @@
 #include "Reset.h"
 #include "DigitalIO.h"
 
+//#define FASTBLINKY
+
+#ifndef FASTBLINKY
 DigitalOut blue_led(13, 1);        // Blue "stat" LED on pin 13
 DigitalOut tx_led(PIN_LED_TXL, 0); // TX LED on pin 26, we use the predefined PIN_LED_TXL to make sure
 DigitalOut rx_led(PIN_LED_RXL, 1); // RX LED on pin 25, we use the predefined PIN_LED_RXL to make sure
@@ -51,3 +54,23 @@ void loop()
 
     delay(200);
 }
+#else
+
+// blink as fast as possible demo
+// about 8MHz/2, or 11-12MHz if we unroll that loop
+
+void setup(void)
+{
+    USBDevice.detach();
+    __disable_irq();
+    PORT->Group[0].DIRSET.reg = 1UL << 19;
+
+    for (;;)
+    {
+        PORT->Group[0].OUTTGL.reg = 1UL << 19;
+    }
+}
+
+void loop(void) {}
+
+#endif // FASTBLINKY
