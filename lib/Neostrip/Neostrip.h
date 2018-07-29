@@ -23,9 +23,10 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
-#include "SPI.h"
 #include "Adafruit_ZeroDMA.h"
 #include "Color.h"
+#include "Print.h"
+#include "SPI.h"
 
 // define this before including bittable.h
 #define NEOSTRIP_OUTPUT_INVERT 1
@@ -104,10 +105,11 @@ class Neostrip
             memset(rawcolors, 0, sizeof(rawcolors));
         }
 
-        void init(void)
+        void init(bool spi_init=true)
         {
             void *spi_data_reg = (void*)(&spi.getSERCOM()->getSercom()->SPI.DATA.reg);
-            spi.begin();
+            if (spi_init)
+                spi.begin();
 
             dma.setTrigger(neostrip_get_dma_sercom_trigger(spi.getSERCOM()));
             dma.setAction(DMA_TRIGGER_ACTON_BEAT);
@@ -175,7 +177,10 @@ class Neostrip
                 set_color(i, color);
         }
 
-        void clear(void) { set_all_colors(BLACK); }
+        void clear(void)
+        {
+            memset(colors, 0, sizeof(colors));
+        }
 
         Color get_color(size_t index) const
         {
@@ -195,7 +200,6 @@ class Neostrip
             return brightness - 1;
         }
 
-#if 0
         void dump_rawcolors(Print& p)
         {
             for (size_t i = 0; i < N; i++)
@@ -207,7 +211,6 @@ class Neostrip
                 p.printf("\n");
             }
         }
-#endif
 
     private:
         SPIClass& spi;
