@@ -38,8 +38,8 @@
 #define STRIP_LENGTH    90
 
 // starting brightness and adjustment step
-#define DEF_BRIGHTNESS  225
-#define BRIGHTNESS_STEP 15
+#define DEF_BRIGHTNESS  215
+#define BRIGHTNESS_STEP 20
 
 // number of steps to fade between states, and delay between each
 // FADE_STEPS should be 2^n+1 to make dividing by FADE_STEPS-1 fast
@@ -48,8 +48,8 @@
 
 // static objects
 Neostrip<STRIP_LENGTH> ns(SPI, DEF_BRIGHTNESS);
-DigitalIn pb_bright_up(7, INPUT_PULLUP);
-DigitalIn pb_bright_down(8, INPUT_PULLUP);
+DigitalIn pb_bright_up(8, INPUT_PULLUP);
+DigitalIn pb_bright_down(9, INPUT_PULLUP);
 
 // fade endpoint arrays (values are indicies to the gradient)
 static uint8_t colors1[STRIP_LENGTH];
