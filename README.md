@@ -1,4 +1,4 @@
-# Makefile and Library for the SparkFun SAMD21 Mini board
+# Makefile, Library, and Sketches for the SparkFun SAMD21 Mini board
 
 I only have one Arduino board, so why have tons of dependencies and generic
 build scripts for tons of targets?
@@ -80,7 +80,7 @@ project, then adapted the parts I need into my own Makefile.
 - This project is great, but too automagic for my taste and too complex to
   easily customize
 
-## Significant changes to the core
+## Notable changes to the core
 - Fix compiler warnings in the Arduino and CMSIS code (builds with `-Wall -Wextra -Werror`)
 - Fix LTO builds, which enables optimizations like inlining across compilation
   units.  I had to add `__attribute__((used))` to a couple functions (the
@@ -88,7 +88,9 @@ project, then adapted the parts I need into my own Makefile.
   for whatever reason the 1200 baud bootloader reset only works when marking
   that function with the used attribute.
 - Add a printf method for the Print class using `vasprintf` from newlib,
-  which makes serial use way nicer. It doesn't support `%f` though
+  which makes serial use way nicer. Adding `-u _printf_float` to `LDFLAGS` should
+  add support for `%f`, but it hasn't been working for me (based on some brief
+  searching it seems that may be related to heap starvation).
 - De-template RingBuffer so that applications can resize the serial buffer
 - Sacrifice 4 bytes of memory so that the 1200 baud USB bootloader reset doesn't
   erase the app start address. Instead it sets the same magic register that the
@@ -96,14 +98,14 @@ project, then adapted the parts I need into my own Makefile.
   the application without reprogramming.
 
 ## Arch Linux Packages
-- arm-none-eabi-gcc       8.1.0-1
-- arm-none-eabi-binutils  2.30-1
-- arm-none-eabi-newlib    3.0.0.20180226-2
-- arm-none-eabi-gdb       8.1-2
-- bossa-git (AUR)         1.8.r48.gb176eee-2
+- arm-none-eabi-gcc
+- arm-none-eabi-binutils
+- arm-none-eabi-newlib
+- arm-none-eabi-gdb
+- bossa-git (AUR) 1.8.r48.gb176eee-2
   - the internet says that Arduino forked bossa and the upstream version
     doesn't work, but the AUR package worked just fine for me
-- jlink-software-and-documentation (AUR) 12:6.32h-0
+- jlink-software-and-documentation (AUR)
   - GDB server for [JLink SWD programmer](https://www.segger.com/products/debug-probes/j-link/models/j-link-edu-mini/)
   - Awesome hardware programmer/debugger for only $20!
 
