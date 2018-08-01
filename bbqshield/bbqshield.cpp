@@ -21,6 +21,7 @@
 #include "DigitalIO.h"
 #include "wiring_private.h"
 #include "Neostrip.h"
+#include "Timer.h"
 #include "gradient.h"
 
 // RNG
@@ -30,8 +31,8 @@
 #define RANDOM_SEED  0xAAC0FFEE
 
 // debug pin PA17 - pin 13, also the blue LED
-#define DEBUG_PORT 0
-#define DEBUG_PIN  17
+//#define DEBUG_PORT 0
+//#define DEBUG_PIN  17
 #include "debug_macros.h"
 
 // how many pixels in the strip?
@@ -50,6 +51,11 @@
 Neostrip<STRIP_LENGTH> ns(SPI, DEF_BRIGHTNESS);
 DigitalIn pb_bright_up(8, INPUT_PULLUP);
 DigitalIn pb_bright_down(9, INPUT_PULLUP);
+DigitalOut blue_led(13);
+
+static void timer_isr(void) { blue_led = 0; }
+Timer heartbeat_timer(TC5, timer_isr);
+DECLARE_TIMER_HANDLER(TC5, heartbeat_timer)
 
 // fade endpoint arrays (values are indicies to the gradient)
 static uint8_t colors1[STRIP_LENGTH];
@@ -96,6 +102,10 @@ void setup(void)
     ns.init(false);
     ns.write(false);
 
+    // set up the heartbeat timer, flashes every main cycle through loop()
+    heartbeat_timer.init();
+    heartbeat_timer.set_us(20000);
+
     // set the fade endpoints and load the first frame into the strip's buffer
     for (size_t i = 0; i < STRIP_LENGTH; i++)
     {
@@ -113,7 +123,9 @@ void loop(void)
     static uint8_t *cstart = colors1;
     static uint8_t *cstop  = colors2;
 
-    DBGLOW();
+    blue_led = 1;
+    heartbeat_timer.start();
+
     for (int i = 0; i < FADE_STEPS; i++)
     {
         // write current frame
@@ -133,7 +145,6 @@ void loop(void)
         // first frame of the next fade.
         delay(STEP_DELAY_MS);
     }
-    DBGHIGH();
 
     // randomize the starting points and then flip buffers
     for (int i = 0; i < STRIP_LENGTH; i++)
