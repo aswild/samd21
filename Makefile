@@ -160,7 +160,7 @@ CCXXFLAGS  += -fshort-enums -Wno-unused-function
 LCXXFLAGS  += -I$(CXX_INCDIR) -I$(CXX_INCDIR)/arm-none-eabi
 endif # clang
 
-define override_flags =
+define override_flags
 override $(1) := $$(strip $$(L$(1)) $$($(1)))
 endef
 $(foreach f,CPPFLAGS CFLAGS CXXFLAGS ASFLAGS LDFLAGS LIBS,$(eval $(call override_flags,$(f))))
