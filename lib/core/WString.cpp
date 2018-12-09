@@ -698,12 +698,12 @@ void String::remove(unsigned int index, unsigned int count){
 	if (count > len - index) { count = len - index; }
 	char *writeTo = buffer + index;
 	len = len - count;
-#ifndef __clang__
+#if defined(__GNUC__) && (__GNUC__ >= 7)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wrestrict"
 #endif
 	strncpy(writeTo, buffer + index + count,len - index);
-#ifndef __clang__
+#if defined(__GNUC__) && (__GNUC__ >= 7)
 #pragma GCC diagnostic pop
 #endif
 	buffer[len] = 0;

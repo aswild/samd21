@@ -118,7 +118,10 @@ $(info >>> LTO is disabled!)
 endif
 
 # used in CFLAGS/CXXFLAGS/ASFLAGS, but not LDFLAGS
-CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror -Wno-expansion-to-defined
+CCXXFLAGS   = $(CPUFLAGS) -Wall -Wextra -Werror
+ifeq ($(shell test "$(shell $(CC) -dumpversion | cut -d. -f1)" -ge 7 && echo 1),1)
+CCXXFLAGS  += -Wno-expansion-to-defined
+endif
 CCXXFLAGS  += -fno-exceptions -ffunction-sections -fdata-sections
 
 LCFLAGS     = $(CCXXFLAGS) -std=gnu11
