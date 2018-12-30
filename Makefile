@@ -97,6 +97,7 @@ CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
 CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
 AS      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc -x assembler-with-cpp
 CCLD    = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
+CXXLD   = $(TOOLCHAIN_BIN)arm-none-eabi-g++
 AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
 OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
@@ -110,7 +111,7 @@ LCPPFLAGS  += -I$(SKETCH) $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 LCPPFLAGS  += -MMD -MP
 
 # used everywhere
-CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os
+CPUFLAGS    = -mcpu=cortex-m0plus -mthumb -ggdb3 -Os -pipe
 ifneq ($(LTO),0)
 CPUFLAGS   += -flto
 else
@@ -264,7 +265,7 @@ disvim: $(TARGET_ELF)
 	$(OBJDUMP) -d $(TARGET_ELF) | vim -R -c ':set ft=asm' -
 
 $(TARGET_ELF): $(TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
-	$(_V_LD_$(V))$(CCLD) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
+	+$(_V_LD_$(V))$(CXXLD) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
 
 $(TARGET_BIN): $(TARGET_ELF)
 	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
