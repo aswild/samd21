@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 #include "sam.h"
 
@@ -212,6 +213,7 @@ typedef struct _PinDescription
 
 /* Pins table to be instantiated into variant.cpp */
 extern const PinDescription g_APinDescription[] ;
+extern const size_t g_APinDescriptionLength;
 
 /* Generic Clock Multiplexer IDs */
 #define GCM_DFLL48M_REF           (0x00U)
