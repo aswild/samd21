@@ -20,52 +20,67 @@
 #ifndef SAMD_PWM_H
 #define SAMD_PWM_H
 
+#include <sam.h>
+
 class PWM
 {
     public:
-        // pin number must be mappable to one of the TCC0 WO[x] pins
         // freq is in Hz
-        // dc is in percent in range [0, 100]. Use setDutyCycle for more precision
-        PWM(uint32_t pin, uint32_t freq=1000, uint32_t dc=50);
+        PWM(uint32_t freq=1000);
 
-        void init(void) const;
-        void setFreq(uint32_t hz);
-        void setPeriod(uint32_t ns);
-        void setDutyCycle(uint32_t dc);
-        void setDutyCycle(float dc); // set DC with float, 0.0 <= dc <= 1.0
+        // initialize hardware
+        void init(void);
 
-        void start(void)
-        {
-            if (!started)
-            {
-                _start();
-                started = true;
-            }
-        }
+        // start/stop - the usual suspects
+        void start(void) const;
+        void stop(void) const;
 
-        void stop(void)
-        {
-            if (started)
-            {
-                _stop();
-                started = false;
-            }
-        }
+        // clear "lock update" bit and apply new duty cycles on the next HW UPDATE
+        // (doesn't bypass double buffering)
+        void update(void) const;
 
-    private:
-        uint32_t pin;
+        // run pinPeripheral for the given pin, if it can be used with TCC0.
+        // Returns the WOx channel number (0-7), or -1 if the pin was invalid.
+        // To disable a pin, just call pinMode for that pin to mux it back to GPIO.
+        int enable_pin(int pin_num) const;
+
+        // functions to set the frequency/period.
+        // double buffered registers until update() is called
+        // Note: the prescaler is enable-protected, so a large period change will
+        // cause an enable/disable cycle and interrupt the output.
+        // immediate controls whether to immediately apply the changes, or leave them in the
+        //   double-buffered registers until a HW UPDATE event. Has no effect unless TCC is
+        //   already enabled and the prescaler doesn't change.
+        void set_freq(uint32_t hz, bool immediate=true);
+        void set_period_ns(uint64_t ns, bool immediate=true);
+        inline void set_period_us(uint64_t us, bool immediate=true) { set_period_ns(us * 1000ull, immediate); }
+        inline void set_period_ms(uint64_t ms, bool immediate=true) { set_period_ns(ms * 1000000ull, immediate); }
+
+        // functions to set the pulse width (duty cycle)
+        // if chan is -1, set all 4 channels, otherwise set chan%4
+        // immediate determines whether to disable the Lock Update bit,
+        // otherwise a manual call to update() is needed.
+        void set_width_ns(int chan, uint64_t dc_ns, bool immediate=true);
+        inline void set_width_us(int chan, uint32_t us, bool imm=true) { set_width_ns(chan, us * 1000ull, imm); }
+        inline void set_width_ms(int chan, uint32_t ms, bool imm=true) { set_width_ns(chan, ms * 1000000ull, imm); }
+
+        // set width as a integer percent, range [1, 100]
+        void set_chan(int chan, int percent, bool immediate=true);
+
+        // same as above but with float duty cycle [0.0, 1.0]
+        void set_chan(int chan, float dc, bool immediate=true);
+        inline void set_chan(int chan, double dc, bool immediate=true) { set_chan(chan, static_cast<float>(dc), immediate); }
+
+
+    //private:
         uint64_t period_ns;
-        uint64_t dc_ns;
-        bool started;
+        uint32_t presc_div;
 
-        // start/stop "const" functions which do register-writes only
-        // and don't update this->started
-        void _start(void) const;
-        void _stop(void) const;
+        // check if TCC0 is enabled
+        inline bool started(void) const { return static_cast<bool>(TCC0->CTRLA.bit.ENABLE); }
 
-        // write this object's values to the registers
-        void write_period(void) const;
-        void write_dc(void) const;
+        // wait for bits in SYNCBUSY register to clear
+        inline void sync(uint32_t mask) const { while(TCC0->SYNCBUSY.reg & mask); }
 };
 
 #endif //SAMD_PWM_H
