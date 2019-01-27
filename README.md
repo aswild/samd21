@@ -37,10 +37,10 @@ project, then adapted the parts I need into my own Makefile.
 ## Components
 
 ### lib/core
-- Arduino SAMD core v1.6.18
+- Arduino SAMD core v1.6.20
 - https://github.com/arduino/ArduinoCore-samd
-- I didn't really see any specific differences in the SparkFun core vs the
-  upstream Arduino core, so I'll use the newer version here.
+- SparkFun provides their own core and libraries, but they're not noticeably
+  different than the upstream Arduino code.
 
 ### lib/variant
 - SparkFun SAMD Arduino core v1.4.0
@@ -48,7 +48,7 @@ project, then adapted the parts I need into my own Makefile.
 - variant files only
 
 ### lib/CMSIS
-- ARM CMSIS 5.3.0
+- ARM CMSIS 5.4.0
 - https://github.com/ARM-software/CMSIS_5
 - just the Include directory, and Lib/GCC/libarm_cortexM0l_math.a
 
@@ -102,9 +102,9 @@ project, then adapted the parts I need into my own Makefile.
 - arm-none-eabi-binutils
 - arm-none-eabi-newlib
 - arm-none-eabi-gdb
-- bossa-git (AUR) 1.8.r48.gb176eee-2
+- bossa-git (AUR) 1.9.1.r2.g3279031-1
   - the internet says that Arduino forked bossa and the upstream version
-    doesn't work, but the AUR package worked just fine for me
+    doesn't work, but the AUR package (that I made) worked just fine for me
 - jlink-software-and-documentation (AUR)
   - GDB server for [JLink SWD programmer](https://www.segger.com/products/debug-probes/j-link/models/j-link-edu-mini/)
   - Awesome hardware programmer/debugger for only $20!
