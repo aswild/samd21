@@ -92,7 +92,7 @@ uint8_t udd_ep_in_cache_buffer[7][64];
 // Some EP are handled using EPHanlders.
 // Possibly all the sparse EP handling subroutines will be
 // converted into reusable EPHandlers in the future.
-static EPHandler *epHandlers[7];
+static EPHandler *epHandlers[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 //==================================================================
 
@@ -393,6 +393,13 @@ bool USBDeviceClass::detach()
 	return true;
 }
 
+bool USBDeviceClass::end() {
+	if (!initialized)
+		return false;
+	usbd.disable();
+	return true;
+}
+
 bool USBDeviceClass::configured()
 {
 	return _usbConfiguration != 0;
@@ -460,9 +467,10 @@ void USBDeviceClass::initEP(uint32_t ep, uint32_t config)
 	}
 	else if (config == (USB_ENDPOINT_TYPE_BULK | USB_ENDPOINT_OUT(0)))
 	{
-		if (epHandlers[ep] == NULL) {
-			epHandlers[ep] = new DoubleBufferedEPOutHandler(usbd, ep, 256);
+		if (epHandlers[ep] != NULL) {
+			delete (DoubleBufferedEPOutHandler*)epHandlers[ep];
 		}
+		epHandlers[ep] = new DoubleBufferedEPOutHandler(usbd, ep, 256);
 	}
 	else if (config == (USB_ENDPOINT_TYPE_BULK | USB_ENDPOINT_IN(0)))
 	{
