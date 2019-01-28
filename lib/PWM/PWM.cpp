@@ -18,9 +18,14 @@
  ******************************************************************************/
 
 #include <cmath>
+#include "sam.h"
 #include "PWM.h"
 #include "variant.h"
 #include "wiring_private.h"
+
+/*******************************************************************************
+ * HELPER FUNCTIONS
+ ******************************************************************************/
 
 template<typename T>
 static inline T clamp(T val, T min, T max)
@@ -31,6 +36,13 @@ static inline T clamp(T val, T min, T max)
         return max;
     return val;
 }
+
+// wait for bits in SYNCBUSY register to clear
+static inline void sync(uint32_t mask) { while(TCC0->SYNCBUSY.reg & mask); }
+
+/*******************************************************************************
+ * TIMING LIMITS AND PIN INFO
+ ******************************************************************************/
 
 // 24-bit counter, 1024x prescaler, 48MHz
 // 17179869184 / 48MHz = 357.9139s = 357913941333ns
@@ -141,17 +153,19 @@ void TCC0_Handler(void)
     TCC0->INTFLAG.reg = 0x000FFC0F;
 }
 
-// PWM Class Methods
+
+/*******************************************************************************
+ * PWM CLASS METHODS
+ ******************************************************************************/
+
 PWM::PWM(uint32_t freq)
-{
-    period_ns = clamp(1000000000ull / freq, MIN_PERIOD_NS, MAX_PERIOD_NS);
-}
+    : period_ns(clamp(1000000000ull / freq, MIN_PERIOD_NS, MAX_PERIOD_NS)) {}
 
 void PWM::init(void)
 {
     // calculate prescaler and period ticks
-    TCCTiming timing(period_ns);
-    presc_div = timing.presc_div;
+    const TCCTiming timing(this->period_ns);
+    this->presc_div = timing.presc_div;
 
     // enable GCLK for TCC0/TCC1
     GCLK->CLKCTRL.reg = static_cast<uint16_t>(GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID_TCC0_TCC1);
@@ -270,7 +284,7 @@ void PWM::set_period_ns(uint64_t ns, bool immediate)
     this->presc_div = timing.presc_div;
 }
 
-void PWM::set_width_ns(int chan, uint64_t dc_ns, bool immediate)
+void PWM::set_width_ns(int chan, uint64_t dc_ns, bool immediate) const
 {
     dc_ns = clamp(dc_ns, 0ull, period_ns);
     uint32_t dc_count = static_cast<uint32_t>((dc_ns * F_CPU) / (1000000000ull * presc_div) - 0);
@@ -294,13 +308,13 @@ void PWM::set_width_ns(int chan, uint64_t dc_ns, bool immediate)
         update();
 }
 
-void PWM::set_chan(int chan, int percent, bool immediate)
+void PWM::set_chan(int chan, int percent, bool immediate) const
 {
     const uint64_t width_ns = (period_ns * clamp(percent, 0, 100)) / 100ull;
     set_width_ns(chan, width_ns, immediate);
 }
 
-void PWM::set_chan(int chan, float dc, bool immediate)
+void PWM::set_chan(int chan, float dc, bool immediate) const
 {
     const float width_ns_f = period_ns * clamp(dc, 0.0f, 1.0f);
     const uint64_t width_ns = static_cast<uint64_t>(std::llroundf(width_ns_f));
