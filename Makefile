@@ -127,7 +127,7 @@ CCXXFLAGS  += -fno-exceptions -ffunction-sections -fdata-sections
 
 LCFLAGS     = $(CCXXFLAGS) -std=gnu11
 
-LCXXFLAGS   = $(CCXXFLAGS) -std=gnu++11 -fno-rtti -fno-threadsafe-statics
+LCXXFLAGS   = $(CCXXFLAGS) -std=gnu++14 -fno-rtti -fno-threadsafe-statics
 
 LASFLAGS    = $(CCXXFLAGS)
 
