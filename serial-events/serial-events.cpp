@@ -7,6 +7,10 @@
 #define DEBUG_PIN  17
 #include "debug_macros.h"
 
+extern void leds_init(void);
+extern void leds_set_brightness(uint8_t b);
+extern void leds_set_state(int state);
+
 static constexpr unsigned long LOOP_DELAY_MS = 10;
 
 static struct {
@@ -26,6 +30,8 @@ void setup(void)
     for (int i = 0; i < N_INPUTS; i++)
         pinMode(inputs[i].pin, INPUT_PULLUP);
 
+    leds_init();
+
     //while (!SerialUSB);
     //SerialUSB.print("Serial Events Test\r\n");
     DBGLOW();
@@ -33,7 +39,22 @@ void setup(void)
 
 static void handle_cmd(const char *cmd)
 {
-    SerialUSB.printf("Got command: '%s'\r\n", cmd);
+    int arg = -1;
+    if (sscanf(cmd, "L %d", &arg) == 1)
+    {
+        leds_set_state(arg);
+        SerialUSB.printf("MSG set LED state %d\r\n", arg);
+    }
+    else if (sscanf(cmd, "B %d", &arg) == 1)
+    {
+        const uint8_t b = static_cast<uint8_t>(arg);
+        leds_set_brightness(b);
+        SerialUSB.printf("MSG set brightness %u\r\n", b);
+    }
+    else
+    {
+        SerialUSB.printf("MSG Unknown Command '%s'\r\n", cmd);
+    }
 }
 
 void loop(void)
@@ -51,7 +72,7 @@ void loop(void)
         else if (c == '\r')
             cmd[cmd_pos++] = '\0';
         else
-            cmd[cmd_pos++] = c;
+            cmd[cmd_pos++] = toupper(c);
 
         if (c == '\r' || cmd_pos == CMD_SIZE)
         {
