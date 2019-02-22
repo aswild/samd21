@@ -1,7 +1,7 @@
 /*******************************************************************************
  * RGB Color Struct/Union
  *
- * Copyright (C) 2018 Allen Wild <allenwild93@gmail.com>
+ * Copyright (C) 2018-2019 Allen Wild <allenwild93@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,14 +20,36 @@
 #ifndef NEOSTRIP_COLOR_H
 #define NEOSTRIP_COLOR_H
 
+#include <stdint.h>
+
+#ifdef __cplusplus
+union __attribute__((packed)) Color {
+#else
 typedef union __attribute__((packed)) {
+#endif
     struct {
         uint8_t blue;
         uint8_t green;
         uint8_t red;
     } b;
     uint32_t i:24;
-} Color;
+
+#ifdef __cplusplus
+    Color(void) = default;
+    Color(int i) : i(i) {}
+
+    Color& operator=(const Color& c) = default;
+    Color& operator=(const int i)
+    {
+        this->i = i;
+        return *this;
+    }
+
+    operator int(void) const { return i; }
+};
+#else
+} Color; // C typedef, name comes after definition
+#endif
 
 static const Color BLACK    = { .i = 0x000000 };
 static const Color WHITE    = { .i = 0xFFFFFF };

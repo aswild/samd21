@@ -1,7 +1,7 @@
 /*******************************************************************************
  * NeoPixel library for Arduino SAMD21 using SPI and DMA
  *
- * Copyright (C) 2018 Allen Wild <allenwild93@gmail.com>
+ * Copyright (C) 2018-2019 Allen Wild <allenwild93@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@ static const uint8_t neostrip_idle_byte __attribute__((used)) = 0x00;
 // that is OK because the WS2812 doesn't need a full 50us to reset.
 static const size_t neostrip_dma_zero_n_bytes = (NEOSTRIP_SPI_CLOCK * 50) / (1000000 * 8);
 
-/* CEI 1931 luminance correction table
+/* CIE 1931 luminance correction table
  * similar, but more technically correct than a gamma correction table.
  * Based on the formulas
  *   Y = (L* / 903.3)           if L* ≤ 8
@@ -140,7 +140,7 @@ class Neostrip
             spi.beginTransaction(SPISettings(NEOSTRIP_SPI_CLOCK, MSBFIRST, SPI_MODE0));
         }
 
-        void write(bool sync=true)
+        void write(bool sync=false)
         {
             while (!dma_complete); // wait for previous transfer to finish
             dma_complete = false;
@@ -158,7 +158,7 @@ class Neostrip
 
         void set_color(size_t index, const Color& color)
         {
-            if (index < 0 || index >= N)
+            if (index >= N)
                 return;
 
             colors[index] = color;
@@ -166,15 +166,13 @@ class Neostrip
 
         void set_color(size_t index, uint32_t color_int)
         {
-            Color c;
-            c.i = color_int;
-            set_color(index, c);
+            set_color(index, Color(color_int));
         }
 
         void set_all_colors(const Color& color)
         {
             for (size_t i = 0; i < N; i++)
-                set_color(i, color);
+                colors[i] = color;
         }
 
         void clear(void)
@@ -184,7 +182,7 @@ class Neostrip
 
         Color get_color(size_t index) const
         {
-            if (index < 0 || index >= N)
+            if (index >= N)
                 return BLACK;
             return colors[index];
         }
@@ -210,6 +208,16 @@ class Neostrip
                 }
                 p.printf("\n");
             }
+        }
+
+        // subscript operators enable treating Neostrip like an array of Colors
+        const Color operator[](size_t index) const { return get_color(index); }
+        Color& operator[](size_t index)
+        {
+            // CAUTION! No bounds check here! We always must return a non-const reference,
+            // so there's no way to check bounds and do nothing like in set_color()
+            // If you use this, be careful, and don't pass around the reference returned
+            return colors[index];
         }
 
     private:
