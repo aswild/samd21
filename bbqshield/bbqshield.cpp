@@ -36,10 +36,10 @@
 #include "debug_macros.h"
 
 // how many pixels in the strip?
-#define STRIP_LENGTH    90
+#define STRIP_LENGTH    32
 
 // starting brightness and adjustment step
-#define DEF_BRIGHTNESS  215
+#define DEF_BRIGHTNESS  100
 #define BRIGHTNESS_STEP 20
 
 // number of steps to fade between states, and delay between each
@@ -111,7 +111,7 @@ void setup(void)
     {
         colors1[i] = RANDOM() % GRADIENT_SIZE;
         colors2[i] = RANDOM() % GRADIENT_SIZE;
-        ns.set_color(i, gradient_data[colors1[i]]);
+        ns[i] = gradient_data[colors1[i]];
     }
 
     ns.wait_for_complete();
@@ -137,7 +137,7 @@ void loop(void)
         for (int j = 0; j < STRIP_LENGTH; j++)
         {
             uint8_t gc = cstart[j] + ((i * (cstop[j] - cstart[j])) / (FADE_STEPS-1));
-            ns.set_color(j, gradient_data[gc]);
+            ns[j] = gradient_data[gc];
         }
 
         // wait for next frame. The last frame of the fade won't actually get
