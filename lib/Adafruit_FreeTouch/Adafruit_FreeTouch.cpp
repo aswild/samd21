@@ -107,7 +107,7 @@ uint16_t Adafruit_FreeTouch::measure(void) {
   uint16_t m;
 
   m = measureRaw();
-  if (m == -1) return -1;
+  if (m == static_cast<uint16_t>(-1)) return -1;
 
   // normalize the signal
   switch (config.oversample) {
@@ -174,6 +174,7 @@ void Adafruit_FreeTouch::setFreqHopping(freq_mode_t fh, freq_hop_t hs) {
 }
 
 /**************************** DEBUGGING ASSIST *************************/
+#if ADAFRUIT_FREETOUCH_DEBUG
 void Adafruit_FreeTouch::snapshotRegsAndPrint(uint32_t base, uint8_t numregs) {
   volatile uint32_t addr = base;
   uint8_t datas[255];
@@ -278,3 +279,4 @@ void Adafruit_FreeTouch::printPTCregs(uint32_t base, uint8_t *regs, uint8_t num)
        }
   }
 }
+#endif // ADAFRUIT_FREETOUCH_DEBUG

@@ -1,6 +1,9 @@
 #ifndef ADAFRUIT_FREETOUCH_H
 #define ADAFRUIT_FREETOUCH_H
 
+// enables register debug functions, requires 'Serial' to be available globally
+#define ADAFRUIT_FREETOUCH_DEBUG 0
+
 #include <Arduino.h>
 #include "adafruit_ptc.h"
 
@@ -25,9 +28,11 @@ class Adafruit_FreeTouch {
   void setCompCap(uint16_t cc);
   void setIntCap(uint8_t ic);
 
+#if ADAFRUIT_FREETOUCH_DEBUG
   void snapshotRegsAndPrint(uint32_t base, uint8_t numregs);
   void printHex(uint8_t h, boolean newline);
   void printPTCregs(uint32_t base, uint8_t *regs, uint8_t num);
+#endif
 
  private:
     int pin;           // arduino pin #
