@@ -219,12 +219,12 @@ vpath %.S   $(SKETCH) $(CORESRCDIRS)
 .PHONY: all
 all: $(TARGET_BIN) .size_done
 
-SIZE_CMD = $(_V_SIZE_$(V))$(SIZE) $(TARGET_ELF) $(TARGET_HEX)
+SIZE_CMD = $(_V_SIZE_$(V))scripts/print-size.py -q $(TARGET_ELF)
 .PHONY: size
-size: $(TARGET_HEX)
+size: $(TARGET_ELF) | $(TARGET_BIN)
 	$(SIZE_CMD)
 
-.size_done: $(TARGET_HEX) | $(TARGET_BIN)
+.size_done: $(TARGET_ELF) | $(TARGET_BIN)
 	$(SIZE_CMD)
 	@touch $@
 
