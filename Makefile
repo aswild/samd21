@@ -93,16 +93,16 @@ endif
 
 # Tools Configuration
 TOOLCHAIN_BIN ?=
-CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
-CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
-AS      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc -x assembler-with-cpp
-CCLD    = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
-CXXLD   = $(TOOLCHAIN_BIN)arm-none-eabi-g++
-AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
-OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
-OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
-SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
-GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
+export CC      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
+export CXX     = $(TOOLCHAIN_BIN)arm-none-eabi-g++
+export AS      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc -x assembler-with-cpp
+export CCLD    = $(TOOLCHAIN_BIN)arm-none-eabi-gcc
+export CXXLD   = $(TOOLCHAIN_BIN)arm-none-eabi-g++
+export AR      = $(TOOLCHAIN_BIN)arm-none-eabi-gcc-ar
+export OBJCOPY = $(TOOLCHAIN_BIN)arm-none-eabi-objcopy
+export OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
+export SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
+export GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
 SOURCE_VERSION := $(SKETCH)-$(shell scripts/get_version.sh)
 
