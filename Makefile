@@ -72,9 +72,9 @@ BOSSAC      ?= bossac
 BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
 OS          := $(shell uname -s)
 ifeq ($(OS),Linux)
-RESET_SCRIPT = bin/reset-arduino-linux.sh -q $(COMPORT)
+RESET_SCRIPT = scripts/reset-arduino-linux.sh -q $(COMPORT)
 else
-RESET_SCRIPT = bin/ard-reset-arduino --zero $(COMPORT)
+RESET_SCRIPT = scripts/ard-reset-arduino --zero $(COMPORT)
 endif
 
 # my bossa-git AUR package sets the version to the Arch pkgver, which is 1.8.rXX.gYYYYYYY since
@@ -104,7 +104,7 @@ OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
-SOURCE_VERSION := $(SKETCH)-$(shell bin/get_version.sh)
+SOURCE_VERSION := $(SKETCH)-$(shell scripts/get_version.sh)
 
 LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON -DSOURCE_VERSION='"$(SOURCE_VERSION)"'
 LCPPFLAGS  += -I$(SKETCH) $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
