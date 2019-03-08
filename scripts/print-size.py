@@ -75,4 +75,4 @@ if __name__ == '__main__':
     print_size('.data', s.data)
     print_size('.bss', s.bss)
     print_size('Total Flash', s.text + s.data)
-    print_size('Total RAM', s.data + s.bss)
+    print_size('Static RAM', s.data + s.bss)
