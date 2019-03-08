@@ -120,7 +120,11 @@ bool __attribute__((used)) CDC_Setup(USBSetup& setup)
 			// port is open (bit 0 of lineState).
 			if (_usbLineInfo.dwDTERate == 1200 && (_usbLineInfo.lineState & 0x01) == 0)
 			{
-				initiateReset(250);
+				initiateReset(250, true);
+			}
+			else if (_usbLineInfo.dwDTERate == 2400 && (_usbLineInfo.lineState & 0x01) == 0)
+			{
+				initiateReset(250, false);
 			}
 			else
 			{

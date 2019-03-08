@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-void initiateReset(int ms);
+void initiateReset(int ms, int bootloaderReset);
 void tickReset();
 void cancelReset();
 

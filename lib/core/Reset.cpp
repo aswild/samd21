@@ -45,6 +45,8 @@ extern uint32_t __text_start__;
 extern uint32_t __attribute__((weak)) __bootloader_trap_reg;
 volatile uint32_t *bootloader_trap_reg = &__bootloader_trap_reg;
 
+static volatile bool bootloaderReset = false;
+
 // obviously, this magic value must match the bootloader code
 #define BOOTLOADER_TRAP_MAGIC 0x07738135
 
@@ -59,7 +61,7 @@ void banzai(void) {
 	// Avoid erasing the application if APP_START is < than the minimum bootloader size
 	// This could happen if without_bootloader linker script was chosen
 	// Minimum bootloader size in SAMD21 family is 512bytes (RM section 22.6.5)
-	if (APP_START < (0x200 + 4)) {
+	if (!bootloaderReset || (APP_START < (0x200 + 4))) {
 		goto reset;
 	}
 
@@ -85,7 +87,8 @@ reset:
 
 static int ticks = -1;
 
-void initiateReset(int _ticks) {
+void initiateReset(int _ticks, int _bootloaderReset) {
+	bootloaderReset = static_cast<bool>(_bootloaderReset);
 	ticks = _ticks;
 }
 
