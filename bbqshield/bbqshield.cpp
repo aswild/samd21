@@ -1,7 +1,7 @@
 /*******************************************************************************
- * BBQ Leona Shield LED Control
+ * Neopixel fire/glowing effect
  *
- * Copyright (C) 2018 Allen Wild <allenwild93@gmail.com>
+ * Copyright (C) 2018-2019 Allen Wild <allenwild93@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,12 @@
 #define SRAND        srand48
 #define RANDOM_SEED  0xAAC0FFEE
 
+template<typename T>
+static inline T random_range(T a, T b)
+{
+    return static_cast<T>((RANDOM() % (b - a)) + a);
+}
+
 // debug pin PA17 - pin 13, also the blue LED
 //#define DEBUG_PORT 0
 //#define DEBUG_PIN  17
@@ -37,6 +43,10 @@
 
 // how many pixels in the strip?
 #define STRIP_LENGTH    32
+
+// 0: two buttons to manually step brightness
+// 1: automatic brightness pulsing, one enable/disable button
+#define AUTO_BRIGHTNESS 1
 
 // starting brightness and adjustment step
 #define DEF_BRIGHTNESS  100
@@ -49,8 +59,6 @@
 
 // static objects
 Neostrip<STRIP_LENGTH> ns(SPI, DEF_BRIGHTNESS);
-DigitalIn pb_bright_up(8, INPUT_PULLUP);
-DigitalIn pb_bright_down(9, INPUT_PULLUP);
 DigitalOut blue_led(13);
 
 static void timer_isr(void) { blue_led = 0; }
@@ -61,9 +69,17 @@ DECLARE_TIMER_HANDLER(TC5, heartbeat_timer)
 static uint8_t colors1[STRIP_LENGTH];
 static uint8_t colors2[STRIP_LENGTH];
 
+#if AUTO_BRIGHTNESS
+// one button to enable/disable
+static volatile bool disabled = false;
+static void pb_onoff_isr(void) { disabled = !disabled; }
+DigitalIn pb_onoff(8, INPUT_PULLUP);
+#else
 // brightness control variables
 static volatile int brightness = DEF_BRIGHTNESS;
 static volatile bool brightness_update = true;
+DigitalIn pb_bright_up(8, INPUT_PULLUP);
+DigitalIn pb_bright_down(9, INPUT_PULLUP);
 
 // brightness control ISRs
 static void brightness_up(void)   { brightness += BRIGHTNESS_STEP; brightness_update = true; }
@@ -84,6 +100,7 @@ static inline uint8_t clamp_brightness(void)
     __enable_irq();
     return (uint8_t)b;
 }
+#endif // AUTO_BRIGHTNESS
 
 void setup(void)
 {
@@ -91,8 +108,12 @@ void setup(void)
     DBGINIT();
     DBGHIGH();
     SRAND(RANDOM_SEED);
+#if AUTO_BRIGHTNESS
+    pb_onoff.add_interrupt(pb_onoff_isr, FALLING);
+#else
     pb_bright_up.add_interrupt(brightness_up, FALLING);
     pb_bright_down.add_interrupt(brightness_down, FALLING);
+#endif
 
     // init the SPI and move pin 13 back to GPIO for debug rather than SCLK
     SPI.begin();
@@ -123,15 +144,53 @@ void loop(void)
     static uint8_t *cstart = colors1;
     static uint8_t *cstop  = colors2;
 
+#if AUTO_BRIGHTNESS
+    static constexpr uint8_t bmin = 30;
+    static constexpr uint8_t bmax = 150;
+    static uint8_t bstart, bend, brightness = DEF_BRIGHTNESS;
+    static uint32_t bstep = 0;
+    static uint32_t bsteps = 0;
+#endif
+
     blue_led = 1;
     heartbeat_timer.start();
 
     for (int i = 0; i < FADE_STEPS; i++)
     {
-        // write current frame
+#if AUTO_BRIGHTNESS
+        if (disabled)
+        {
+            // disable button pushed, clear strip
+            ns.clear();
+            ns.write();
+            // sleep until enable button toggles again
+            while (disabled)
+                __WFI();
+        }
+
+        if (bstep == bsteps)
+        {
+            // end of brightness fade, set new endpoint and time
+            bstart = brightness;
+            bend = random_range(bmin, bmax);
+            bstep = 0;
+            bsteps = random_range(50, 150);
+        }
+        else
+        {
+            // FIXME: it's really glitchy without the floating-point cast, the integer range is
+            // probably too small and all the numbers here should be scaled up significantly.
+            // Using floats is a lazy but functional workaround.
+            brightness = bstart + ((1.0*bstep * (bend - bstart)) / (bsteps-1));
+            bstep++;
+        }
+        ns.set_brightness(brightness);
+#else
         if (brightness_update)
             ns.set_brightness(clamp_brightness());
-        ns.write(false);
+#endif
+        // write current frame
+        ns.write();
 
         // prepare the next frame with a linear interpolation
         for (int j = 0; j < STRIP_LENGTH; j++)
