@@ -108,6 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', default='-', help='output file (- for stdin)')
     parser.add_argument('-g', '--gradient', action='store_true', help='gradient mode (return only first row)')
     parser.add_argument('-p', '--pallette', action='store_true', help='pallette mode for animations')
+    parser.add_argument('-n', '--name', type=str, help='variable/macro name (default from output file name)')
     parser.add_argument('images', metavar='IMAGE', nargs='+', help='image input files')
     args = parser.parse_args()
 
@@ -117,6 +118,9 @@ if __name__ == '__main__':
     else:
         outfile = open(args.output, 'w')
         name = normalize_name(args.output)
+
+    if args.name:
+        name = args.name
 
     if len(args.images) == 1:
         do_single_image(name, args.images[0], outfile, args.gradient)
