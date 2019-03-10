@@ -158,8 +158,8 @@ void loop(void)
     static uint8_t *cstop  = colors2;
 
 #if AUTO_BRIGHTNESS
-    static constexpr uint8_t bmin = 30;
-    static constexpr uint8_t bmax = 150;
+    static constexpr uint8_t bmin = 40;
+    static constexpr uint8_t bmax = 125;
     static uint8_t bstart, bend, brightness = DEF_BRIGHTNESS;
     static uint32_t bstep = 0;
     static uint32_t bsteps = 0;
@@ -187,7 +187,7 @@ void loop(void)
             bstart = brightness;
             bend = random_range(bmin, bmax);
             bstep = 0;
-            bsteps = random_range(50, 150);
+            bsteps = random_range(20, 80);
         }
         else
         {
