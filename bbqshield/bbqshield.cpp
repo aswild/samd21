@@ -22,7 +22,20 @@
 #include "wiring_private.h"
 #include "Neostrip.h"
 #include "Timer.h"
+
+/* Available gradients:
+ * 1: fire red/orange
+ * 2: blue/cyan/green
+ */
+#define GRADIENT_ID 1
+
+#if GRADIENT_ID == 1
 #include "gradient.h"
+#elif GRADIENT_ID == 2
+#include "gradient_bluegreen.h"
+#else
+#error Invalid GRADIENT_ID
+#endif
 
 // RNG
 #include <stdlib.h>
