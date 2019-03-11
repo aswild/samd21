@@ -28,16 +28,16 @@
 
 const SPISettings DEFAULT_SPI_SETTINGS = SPISettings();
 
-SPIClass::SPIClass(SERCOM *p_sercom, uint8_t uc_pinMISO, uint8_t uc_pinSCK, uint8_t uc_pinMOSI, SercomSpiTXPad PadTx, SercomRXPad PadRx)
+SPIClass::SPIClass(SERCOM *p_sercom, int8_t pinMISO, int8_t pinSCK, int8_t pinMOSI, SercomSpiTXPad PadTx, SercomRXPad PadRx)
 {
   initialized = false;
   assert(p_sercom != NULL);
   _p_sercom = p_sercom;
 
   // pins
-  _uc_pinMiso = uc_pinMISO;
-  _uc_pinSCK = uc_pinSCK;
-  _uc_pinMosi = uc_pinMOSI;
+  _pinMiso = pinMISO;
+  _pinSCK = pinSCK;
+  _pinMosi = pinMOSI;
 
   // SERCOM pads
   _padTx=PadTx;
@@ -49,9 +49,12 @@ void SPIClass::begin()
   init();
 
   // PIO init
-  pinPeripheral(_uc_pinMiso, g_APinDescription[_uc_pinMiso].ulPinType);
-  pinPeripheral(_uc_pinSCK, g_APinDescription[_uc_pinSCK].ulPinType);
-  pinPeripheral(_uc_pinMosi, g_APinDescription[_uc_pinMosi].ulPinType);
+  if (_pinMiso >= 0)
+      pinPeripheral(_pinMiso, g_APinDescription[_pinMiso].ulPinType);
+  if (_pinSCK >= 0)
+      pinPeripheral(_pinSCK, g_APinDescription[_pinSCK].ulPinType);
+  if (_pinMosi >= 0)
+      pinPeripheral(_pinMosi, g_APinDescription[_pinMosi].ulPinType);
 
   config(DEFAULT_SPI_SETTINGS);
 }

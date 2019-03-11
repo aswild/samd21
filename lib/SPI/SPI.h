@@ -92,7 +92,7 @@ class SPISettings {
 
 class SPIClass {
   public:
-  SPIClass(SERCOM *p_sercom, uint8_t uc_pinMISO, uint8_t uc_pinSCK, uint8_t uc_pinMOSI, SercomSpiTXPad, SercomRXPad);
+  SPIClass(SERCOM *p_sercom, int8_t pinMISO, int8_t pinSCK, int8_t pinMOSI, SercomSpiTXPad, SercomRXPad);
 
   SERCOM * getSERCOM(void) { return this->_p_sercom; }
 
@@ -123,9 +123,9 @@ class SPIClass {
   void config(SPISettings settings);
 
   SERCOM *_p_sercom;
-  uint8_t _uc_pinMiso;
-  uint8_t _uc_pinMosi;
-  uint8_t _uc_pinSCK;
+  int8_t _pinMiso;
+  int8_t _pinMosi;
+  int8_t _pinSCK;
 
   SercomSpiTXPad _padTx;
   SercomRXPad _padRx;
