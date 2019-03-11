@@ -71,8 +71,8 @@ if __name__ == '__main__':
 
     if not args.quiet:
         print('Program Size of %s:'%args.file)
+    print_size('Total Flash', s.text + s.data)
+    print_size('Static RAM', s.data + s.bss)
     print_size('.text', s.text)
     print_size('.data', s.data)
     print_size('.bss', s.bss)
-    print_size('Total Flash', s.text + s.data)
-    print_size('Static RAM', s.data + s.bss)
