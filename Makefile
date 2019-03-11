@@ -132,7 +132,7 @@ LCXXFLAGS   = $(CCXXFLAGS) -std=gnu++14 -fno-rtti -fno-threadsafe-statics
 LASFLAGS    = $(CCXXFLAGS)
 
 LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
-LLDFLAGS    = $(CPUFLAGS) -fuse-linker-plugin -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LLDFLAGS    = $(CPUFLAGS) -fuse-linker-plugin --specs=nano.specs --specs=nosys.specs
 LLDFLAGS   += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LLDFLAGS   += -Wl,--warn-common -Wl,--warn-section-align
 LLDFLAGS   += -Wl,-Map=$(OBJDIR)/$(TARGET).map
@@ -193,6 +193,10 @@ CORE_AS_SRC  = $(foreach dir,$(CORESRCDIRS),$(notdir $(wildcard $(dir)/*.S)))
 CORE_OBJ = $(patsubst %.cpp,$(OBJDIR)/%.o,$(CORE_CXX_SRC)) \
            $(patsubst %.c,$(OBJDIR)/%.o,$(CORE_CC_SRC)) \
            $(patsubst %.S,$(OBJDIR)/%.o,$(CORE_AS_SRC))
+
+# "system" objects to link explicitly rather than via libcore.h
+SYS_OBJ   = $(addprefix $(OBJDIR)/,cortex_handlers.o main.o startup.o variant.o)
+CORE_OBJ := $(filter-out $(SYS_OBJ),$(CORE_OBJ))
 
 TARGET_ELF  = $(OBJDIR)/$(TARGET).elf
 TARGET_BIN  = $(OBJDIR)/$(TARGET).bin
@@ -264,8 +268,8 @@ dis: $(TARGET_ELF)
 disvim: $(TARGET_ELF)
 	$(OBJDUMP) -d $(TARGET_ELF) | vim -R -c ':set ft=asm' -
 
-$(TARGET_ELF): $(TARGET_OBJ) $(CORELIB) $(LDSCRIPT)
-	+$(_V_LD_$(V))$(CXXLD) $(LDFLAGS) -o $@ $(TARGET_OBJ) -Wl,--as-needed $(LIBS)
+$(TARGET_ELF): $(TARGET_OBJ) $(SYS_OBJ) $(CORELIB) $(LDSCRIPT)
+	+$(_V_LD_$(V))$(CXXLD) $(LDFLAGS) -T$(LDSCRIPT) -o $@ $(TARGET_OBJ) $(SYS_OBJ) -Wl,--as-needed $(LIBS)
 
 $(TARGET_BIN): $(TARGET_ELF)
 	$(_V_BIN_$(V))$(OBJCOPY) -O binary $< $@
