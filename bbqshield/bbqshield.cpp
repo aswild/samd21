@@ -23,19 +23,8 @@
 #include "Neostrip.h"
 #include "Timer.h"
 
-/* Available gradients:
- * 1: fire red/orange
- * 2: blue/cyan/green
- */
-#define GRADIENT_ID 1
-
-#if GRADIENT_ID == 1
 #include "gradient.h"
-#elif GRADIENT_ID == 2
 #include "gradient_bluegreen.h"
-#else
-#error Invalid GRADIENT_ID
-#endif
 
 // RNG
 #include <stdlib.h>
@@ -73,6 +62,12 @@ static inline T random_range(T a, T b)
 // static objects
 Neostrip<STRIP_LENGTH> ns(SPI, DEF_BRIGHTNESS);
 DigitalOut blue_led(13);
+
+// SPI1 object. SERCOM4, all pins are -1 so SPIClass::begin() doesn't
+// screw with the pin muxing. We'll use pinPeripheral manually in setup()
+SPIClass SPI1(&sercom4, -1, -1, -1, SPI_PAD_0_SCK_1, SERCOM_RX_PAD_3);
+Neostrip<STRIP_LENGTH> ns1(SPI1, DEF_BRIGHTNESS);
+static_assert(GRADIENT_BLUEGREEN_SIZE >= GRADIENT_SIZE);
 
 static void timer_isr(void) { blue_led = 0; }
 Timer heartbeat_timer(TC5, timer_isr);
@@ -132,9 +127,16 @@ void setup(void)
     SPI.begin();
     pinPeripheral(13, PIO_OUTPUT);
 
+    // set up 2nd SPI and use pin 15 (PB08, which Arduino calls "analog" A1)
+    // as SERCOM4[0] in SERCOM-ALT mode
+    SPI1.begin();
+    pinPeripheral(15, PIO_SERCOM_ALT);
+
     // init and clear neostrip
     ns.init(false);
+    ns1.init(false);
     ns.write(false);
+    ns1.write(false);
 
     // set up the heartbeat timer, flashes every main cycle through loop()
     heartbeat_timer.init();
@@ -146,9 +148,11 @@ void setup(void)
         colors1[i] = RANDOM() % GRADIENT_SIZE;
         colors2[i] = RANDOM() % GRADIENT_SIZE;
         ns[i] = gradient_data[colors1[i]];
+        ns1[i] = gradient_bluegreen_data[colors1[i]];
     }
 
     ns.wait_for_complete();
+    ns1.wait_for_complete();
     DBGLOW();
 }
 
@@ -175,7 +179,9 @@ void loop(void)
         {
             // disable button pushed, clear strip
             ns.clear();
+            ns1.clear();
             ns.write();
+            ns1.write();
             // sleep until enable button toggles again
             while (disabled)
                 __WFI();
@@ -198,18 +204,24 @@ void loop(void)
             bstep++;
         }
         ns.set_brightness(brightness);
+        ns1.set_brightness(brightness);
 #else
         if (brightness_update)
+        {
             ns.set_brightness(clamp_brightness());
+            ns1.set_brightness(clamp_brightness());
+        }
 #endif
         // write current frame
         ns.write();
+        ns1.write();
 
         // prepare the next frame with a linear interpolation
         for (int j = 0; j < STRIP_LENGTH; j++)
         {
             uint8_t gc = cstart[j] + ((i * (cstop[j] - cstart[j])) / (FADE_STEPS-1));
             ns[j] = gradient_data[gc];
+            ns1[j] = gradient_bluegreen_data[gc];
         }
 
         // wait for next frame. The last frame of the fade won't actually get
