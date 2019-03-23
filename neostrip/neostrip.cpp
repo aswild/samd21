@@ -17,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+#include <math.h>
 #include "Arduino.h"
 #include "DigitalIO.h"
 #include "Neostrip.h"
@@ -24,7 +25,7 @@
 #include "Wire.h"
 #include "wiring_private.h"
 
-#define STRIP_LENGTH 8
+#define STRIP_LENGTH 300
 #define BRIGHTNESS_STEP 2
 
 #define KEYPAD_SDA_PIN 4
@@ -42,7 +43,7 @@ DigitalIn rpg_b(7);
 DigitalIn rpg_pb(9, INPUT_PULLUP);
 
 static volatile uint8_t rpg_state;
-static volatile int brightness = (10 * 255) / 100;
+static volatile int brightness = (30 * 255) / 100;
 static volatile bool invert = false;
 static volatile bool keypad_event = false;
 
@@ -118,10 +119,10 @@ void setup(void)
     ns.write();
 
     // override pinmux settings from variant.cpp
-    i2c.begin();
-    pinPeripheral(KEYPAD_SDA_PIN, PIO_SERCOM_ALT);
-    pinPeripheral(KEYPAD_SCL_PIN, PIO_SERCOM_ALT);
-    keypad.init(false);
+    //i2c.begin();
+    //pinPeripheral(KEYPAD_SDA_PIN, PIO_SERCOM_ALT);
+    //pinPeripheral(KEYPAD_SCL_PIN, PIO_SERCOM_ALT);
+    //keypad.init(false);
 
     blue_led = 0;
 }
@@ -175,7 +176,7 @@ static Color get_color(int n)
 
 void loop(void)
 {
-    static const int dh = N_STEPS / STRIP_LENGTH;
+    static constexpr float dh = 1.0 * N_STEPS / STRIP_LENGTH;
     static int basehue = 0;
     static uint16_t keypad_data = 0;
 
@@ -198,7 +199,7 @@ void loop(void)
 
     for (unsigned i = 0; i < STRIP_LENGTH; i++)
     {
-        ns.set_color(i, get_color((dh * i) - basehue));
+        ns.set_color(i, get_color(lroundf(dh * i) - basehue));
 
         basehue += 1 * direction;
         if (basehue >= N_STEPS)
@@ -207,5 +208,5 @@ void loop(void)
             basehue = N_STEPS-1;
     }
 
-    delay(17);
+    delay(100);
 }

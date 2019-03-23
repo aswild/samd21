@@ -44,11 +44,11 @@ static inline T random_range(T a, T b)
 #include "debug_macros.h"
 
 // how many pixels in the strip?
-#define STRIP_LENGTH    32
+#define STRIP_LENGTH    300
 
 // 0: two buttons to manually step brightness
 // 1: automatic brightness pulsing, one enable/disable button
-#define AUTO_BRIGHTNESS 1
+#define AUTO_BRIGHTNESS 0
 
 // starting brightness and adjustment step
 #define DEF_BRIGHTNESS  100
