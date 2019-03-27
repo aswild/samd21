@@ -55,7 +55,7 @@ SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 OPENOCD = openocd
 OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 
-VERSION    := $(shell ../bin/get_version.sh --sam-ba)
+VERSION    := $(shell ../scripts/get_version.sh --sam-ba)
 USB_PRODUCT = SAMD21G18A SAM-BA
 
 LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"$(USB_PRODUCT)"' -DUSB_SERIAL_NUM='"$(VERSION)"'
@@ -110,12 +110,12 @@ _V_CLEAN_0  = @echo "  CLEAN";
 .PHONY: all
 all: $(TARGET_BIN) .size_done
 
-SIZE_CMD = $(_V_SIZE_$(V))$(SIZE) $(TARGET_ELF) $(TARGET_HEX)
+SIZE_CMD = $(_V_SIZE_$(V))../scripts/print-size.py -q $(TARGET_ELF)
 .PHONY: size
-size: $(TARGET_HEX)
+size: $(TARGET_ELF)
 	$(SIZE_CMD)
 
-.size_done: $(TARGET_HEX) | $(TARGET_BIN)
+.size_done: $(TARGET_ELF) | $(TARGET_BIN)
 	$(SIZE_CMD)
 	@touch $@
 
