@@ -268,6 +268,9 @@ dis: $(TARGET_ELF)
 disvim: $(TARGET_ELF)
 	$(OBJDUMP) -d $(TARGET_ELF) | vim -R -c ':set ft=asm' -
 
+.PHONY: hex
+hex: $(TARGET_HEX)
+
 $(TARGET_ELF): $(TARGET_OBJ) $(SYS_OBJ) $(CORELIB) $(LDSCRIPT)
 	+$(_V_LD_$(V))$(CXXLD) $(LDFLAGS) -T$(LDSCRIPT) -o $@ $(TARGET_OBJ) $(SYS_OBJ) -Wl,--as-needed $(LIBS)
 

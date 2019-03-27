@@ -128,6 +128,9 @@ upload-bossa: $(TARGET_BIN) all
 	$(_V_RESET_$(V))$(RESET_SCRIPT)
 	$(_V_UPLOAD_$(V))$(BOSSAC) $(BOSSAC_FLAGS) $<
 
+.PHONY: hex
+hex: $(TARGET_HEX)
+
 .PHONY: clean
 clean:
 	$(_V_CLEAN_$(V))rm -f $(TARGET_OBJ) $(DEPS) $(TARGET_ELF) $(TARGET_BIN) $(TARGET_HEX) $(TARGET).map .size_done
