@@ -35,12 +35,12 @@ class ELFSize(object):
             if m:
                 sections[m.group(1)] = int(m.group(2))
 
-        try:
-            self._text = sections['.text']
-            self._data = sections['.data']
-            self._bss = sections['.bss']
-        except KeyError as e:
-            raise RuntimeError('no size for section %s'%e)
+        self._text = sections.get('.text')
+        self._data = sections.get('.data', sections.get('.relocate'))
+        self._bss = sections.get('.bss')
+        for sec in ('text', 'data', 'bss'):
+            if not getattr(self, '_'+sec):
+                raise RuntimeError('no size for section .%s'%sec)
 
     @property
     def text(self):
