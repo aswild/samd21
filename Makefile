@@ -1,7 +1,7 @@
 ################################################################################
 # Arduino SAMD21 Makefile
 #
-# Copyright (C) 2018 Allen Wild <allenwild93@gmail.com>
+# Copyright (C) 2018-2019 Allen Wild <allenwild93@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,9 +104,14 @@ export OBJDUMP = $(TOOLCHAIN_BIN)arm-none-eabi-objdump
 export SIZE    = $(TOOLCHAIN_BIN)arm-none-eabi-size
 export GDB     = $(TOOLCHAIN_BIN)arm-none-eabi-gdb
 
+ifeq ($(NO_SOURCE_VERSION),)
 SOURCE_VERSION := $(SKETCH)-$(shell scripts/get_version.sh)
+SOURCE_VERSION_FLAG = -DSOURCE_VERSION='"$(SOURCE_VERSION)"'
+else
+SOURCE_VERSION_FLAG =
+endif
 
-LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON -DSOURCE_VERSION='"$(SOURCE_VERSION)"'
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON $(SOURCE_VERSION_FLAG)
 LCPPFLAGS  += -I$(SKETCH) $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 LCPPFLAGS  += -MMD -MP
 
@@ -163,6 +168,10 @@ CPUFLAGS   := $(filter-out -flto,$(CPUFLAGS))
 CCXXFLAGS  += -fshort-enums -Wno-unused-function
 LCXXFLAGS  += -I$(CXX_INCDIR) -I$(CXX_INCDIR)/arm-none-eabi
 endif # clang
+
+# include sketch-specific config after setting all the compile flags
+# and such. Here sketches can override/append all the stuff set above
+-include $(SKETCH)/config.mk
 
 define override_flags
 override $(1) := $$(strip $$(L$(1)) $$($(1)))
