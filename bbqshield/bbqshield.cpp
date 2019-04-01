@@ -17,20 +17,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+// RNG
+#include <stdlib.h>
+#define RANDOM       lrand48
+#define SRAND        srand48
+#define RANDOM_SEED  0xAAC0FFEE
+
 #include "Arduino.h"
 #include "DigitalIO.h"
 #include "wiring_private.h"
 #include "Neostrip.h"
 #include "Timer.h"
 
+#include "NeostripAnimation.h"
+#include "GradientAnimation.h"
 #include "gradient.h"
 #include "gradient_bluegreen.h"
-
-// RNG
-#include <stdlib.h>
-#define RANDOM       lrand48
-#define SRAND        srand48
-#define RANDOM_SEED  0xAAC0FFEE
 
 template<typename T>
 static inline T random_range(T a, T b)
@@ -69,19 +71,22 @@ SPIClass SPI1(&sercom4, -1, -1, -1, SPI_PAD_0_SCK_1, SERCOM_RX_PAD_3);
 Neostrip<STRIP_LENGTH> ns1(SPI1, DEF_BRIGHTNESS);
 static_assert(GRADIENT_BLUEGREEN_SIZE >= GRADIENT_SIZE);
 
+GradientAnimation<STRIP_LENGTH, FADE_STEPS> ga1(ns, gradient_data, GRADIENT_SIZE);
+GradientAnimation<STRIP_LENGTH, FADE_STEPS> ga2(ns, gradient_bluegreen_data, GRADIENT_SIZE);
+static NeostripAnimation<STRIP_LENGTH> *anim = &ga1;
+
 static void timer_isr(void) { blue_led = 0; }
 Timer heartbeat_timer(TC5, timer_isr);
 DECLARE_TIMER_HANDLER(TC5, heartbeat_timer)
 
-// fade endpoint arrays (values are indicies to the gradient)
-static uint8_t colors1[STRIP_LENGTH];
-static uint8_t colors2[STRIP_LENGTH];
-
 #if AUTO_BRIGHTNESS
 // one button to enable/disable
 static volatile bool disabled = false;
-static void pb_onoff_isr(void) { disabled = !disabled; }
+static volatile bool switch_animations = false;
+static void pb_onoff_isr(void)  { disabled = !disabled; }
+static void pb_switch_isr(void) { switch_animations = true; }
 DigitalIn pb_onoff(8, INPUT_PULLUP);
+DigitalIn pb_switch(9, INPUT_PULLUP);
 #else
 // brightness control variables
 static volatile int brightness = DEF_BRIGHTNESS;
@@ -118,6 +123,7 @@ void setup(void)
     SRAND(RANDOM_SEED);
 #if AUTO_BRIGHTNESS
     pb_onoff.add_interrupt(pb_onoff_isr, FALLING);
+    pb_switch.add_interrupt(pb_switch_isr, FALLING);
 #else
     pb_bright_up.add_interrupt(brightness_up, FALLING);
     pb_bright_down.add_interrupt(brightness_down, FALLING);
@@ -142,14 +148,9 @@ void setup(void)
     heartbeat_timer.init();
     heartbeat_timer.set_us(20000);
 
-    // set the fade endpoints and load the first frame into the strip's buffer
-    for (size_t i = 0; i < STRIP_LENGTH; i++)
-    {
-        colors1[i] = RANDOM() % GRADIENT_SIZE;
-        colors2[i] = RANDOM() % GRADIENT_SIZE;
-        ns[i] = gradient_data[colors1[i]];
-        ns1[i] = gradient_bluegreen_data[colors1[i]];
-    }
+    ga1.reset();
+    ga2.reset();
+    anim->next();
 
     ns.wait_for_complete();
     ns1.wait_for_complete();
@@ -158,90 +159,68 @@ void setup(void)
 
 void loop(void)
 {
-    static uint8_t *cstart = colors1;
-    static uint8_t *cstop  = colors2;
-
 #if AUTO_BRIGHTNESS
     static constexpr uint8_t bmin = 40;
     static constexpr uint8_t bmax = 125;
     static uint8_t bstart, bend, brightness = DEF_BRIGHTNESS;
     static uint32_t bstep = 0;
     static uint32_t bsteps = 0;
-#endif
 
-    blue_led = 1;
-    heartbeat_timer.start();
-
-    for (int i = 0; i < FADE_STEPS; i++)
+    if (disabled)
     {
-#if AUTO_BRIGHTNESS
-        if (disabled)
-        {
-            // disable button pushed, clear strip
-            ns.clear();
-            ns1.clear();
-            ns.write();
-            ns1.write();
-            // sleep until enable button toggles again
-            while (disabled)
-                __WFI();
-        }
-
-        if (bstep == bsteps)
-        {
-            // end of brightness fade, set new endpoint and time
-            bstart = brightness;
-            bend = random_range(bmin, bmax);
-            bstep = 0;
-            bsteps = random_range(20, 80);
-        }
-        else
-        {
-            // FIXME: it's really glitchy without the floating-point cast, the integer range is
-            // probably too small and all the numbers here should be scaled up significantly.
-            // Using floats is a lazy but functional workaround.
-            brightness = bstart + ((1.0*bstep * (bend - bstart)) / (bsteps-1));
-            bstep++;
-        }
-        ns.set_brightness(brightness);
-        ns1.set_brightness(brightness);
-#else
-        if (brightness_update)
-        {
-            ns.set_brightness(clamp_brightness());
-            ns1.set_brightness(clamp_brightness());
-        }
-#endif
-        // write current frame
+        // disable button pushed, clear strip
+        ns.clear();
+        ns1.clear();
         ns.write();
         ns1.write();
-
-        // prepare the next frame with a linear interpolation
-        for (int j = 0; j < STRIP_LENGTH; j++)
-        {
-            uint8_t gc = cstart[j] + ((i * (cstop[j] - cstart[j])) / (FADE_STEPS-1));
-            ns[j] = gradient_data[gc];
-            ns1[j] = gradient_bluegreen_data[gc];
-        }
-
-        // wait for next frame. The last frame of the fade won't actually get
-        // displayed until the next time through loop(), where it's the preloaded
-        // first frame of the next fade.
-        delay(STEP_DELAY_MS);
+        // sleep until enable button toggles again
+        while (disabled)
+            __WFI();
     }
 
-    // randomize the starting points and then flip buffers
-    for (int i = 0; i < STRIP_LENGTH; i++)
-        cstart[i] = RANDOM() % GRADIENT_SIZE;
-
-    if (cstart == colors1)
+    if (bstep == bsteps)
     {
-        cstart = colors2;
-        cstop = colors1;
+        // end of brightness fade, set new endpoint and time
+        bstart = brightness;
+        bend = random_range(bmin, bmax);
+        bstep = 0;
+        bsteps = random_range(20, 80);
     }
     else
     {
-        cstart = colors1;
-        cstop = colors2;
+        // FIXME: it's really glitchy without the floating-point cast, the integer range is
+        // probably too small and all the numbers here should be scaled up significantly.
+        // Using floats is a lazy but functional workaround.
+        brightness = bstart + ((1.0*bstep * (bend - bstart)) / (bsteps-1));
+        bstep++;
     }
+    ns.set_brightness(brightness);
+    ns1.set_brightness(brightness);
+#else
+    if (brightness_update)
+    {
+        ns.set_brightness(clamp_brightness());
+        ns1.set_brightness(clamp_brightness());
+    }
+#endif
+    // write current frame
+    ns.write();
+    ns1.write();
+
+    if (switch_animations)
+    {
+        anim = (anim == &ga1) ? &ga2 : &ga1;
+        switch_animations = false;
+    }
+
+    if (anim->next() == FR_RESET)
+    {
+        blue_led = 1;
+        heartbeat_timer.start();
+    }
+
+    // wait for next frame. The last frame of the fade won't actually get
+    // displayed until the next time through loop(), where it's the preloaded
+    // first frame of the next fade.
+    delay(STEP_DELAY_MS);
 }
