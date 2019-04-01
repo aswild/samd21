@@ -95,7 +95,13 @@ static inline uint8_t neostrip_get_dma_sercom_trigger(SERCOM *_s)
     return 0;
 }
 
-template <size_t N>
+enum ColorOrder
+{
+    COLOR_ORDER_GRB,
+    COLOR_ORDER_RGB,
+};
+
+template <size_t N, ColorOrder CO=COLOR_ORDER_GRB>
 class Neostrip
 {
     public:
@@ -230,7 +236,7 @@ class Neostrip
 
         static void dma_complete_callback(void *data)
         {
-            Neostrip<N> *ns = static_cast<Neostrip<N>*>(data);
+            Neostrip<N, CO> *ns = static_cast<Neostrip<N, CO>*>(data);
             ns->dma_complete = true;
         }
 
@@ -287,9 +293,18 @@ class Neostrip
             {
                 const Color& c = colors[i];
                 const size_t ri = i * 9;
-                expand_chunk(&rawcolors[ri+0], cie1931_table[scale_brightness(c.b.green)]);
-                expand_chunk(&rawcolors[ri+3], cie1931_table[scale_brightness(c.b.red)]);
-                expand_chunk(&rawcolors[ri+6], cie1931_table[scale_brightness(c.b.blue)]);
+                if (CO == COLOR_ORDER_GRB)
+                {
+                    expand_chunk(&rawcolors[ri+0], cie1931_table[scale_brightness(c.b.green)]);
+                    expand_chunk(&rawcolors[ri+3], cie1931_table[scale_brightness(c.b.red)]);
+                    expand_chunk(&rawcolors[ri+6], cie1931_table[scale_brightness(c.b.blue)]);
+                }
+                else /* if (CO == COLOR_ORDER_RGB) */
+                {
+                    expand_chunk(&rawcolors[ri+0], cie1931_table[scale_brightness(c.b.red)]);
+                    expand_chunk(&rawcolors[ri+3], cie1931_table[scale_brightness(c.b.green)]);
+                    expand_chunk(&rawcolors[ri+6], cie1931_table[scale_brightness(c.b.blue)]);
+                }
             }
         }
 };
