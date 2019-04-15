@@ -58,7 +58,7 @@ OPENOCD_CMD = -f ../openocd.cfg -c "program $(TARGET_BIN) verify reset exit"
 VERSION    := $(shell ../scripts/get_version.sh --sam-ba)
 USB_PRODUCT = SAMD21G18A SAM-BA
 
-LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"$(USB_PRODUCT)"' -DUSB_SERIAL_NUM='"$(VERSION)"'
+LCPPFLAGS   = -D__SAMD21G18A__ -DUSB_PRODUCT='"$(USB_PRODUCT)"' -DSOURCE_VERSION='"$(VERSION)"'
 LCPPFLAGS  += $(addprefix -I,$(INCLUDES)) -MMD -MP
 ifeq ($(APP),1)
 USB_PRODUCT += APP
