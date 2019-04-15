@@ -69,7 +69,7 @@ SAM_DIR     = lib/CMSIS-Atmel
 
 COMPORT     ?= /dev/ttyACM0
 BOSSAC      ?= bossac
-BOSSAC_FLAGS = --erase --write --verify --reset --port=$(COMPORT)
+BOSSAC_FLAGS = --erase --write --verify --reset --usb-port --port=$(COMPORT)
 OS          := $(shell uname -s)
 ifeq ($(OS),Linux)
 RESET_SCRIPT = scripts/reset-arduino-linux.sh -q $(COMPORT)
