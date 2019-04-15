@@ -20,12 +20,21 @@ done
 shift $(($OPTIND - 1))
 
 DEVICE=${1:-/dev/ttyACM0}
-[[ -e $DEVICE ]] || die "$DEVICE not found"
+if [[ $DEVICE != /dev/* ]]; then
+    DEVICE="/dev/$DEVICE"
+fi
 
-usb_product_file="$(readlink -f /sys/class/tty/${DEVICE#/dev/}/device)/../product"
-if [[ -f $usb_product_file ]] && grep -qi sam-ba $usb_product_file; then
-	msg "already in SAM-BA bootloader"
-	exit 0
+[[ -e $DEVICE ]] || die "$DEVICE not found"
+DEVICE_NOLINK="$(readlink -f $DEVICE)"
+
+usb_product_file="$(readlink -f /sys/class/tty/${DEVICE_NOLINK#/dev/}/device)/../product"
+if [[ -f $usb_product_file ]]; then
+    if grep -qi sam-ba $usb_product_file; then
+        msg "already in SAM-BA bootloader"
+        exit 0
+    fi
+else
+    msg "warning: didn't find ${DEVICE_NOLINK#/dev/} in sysfs"
 fi
 
 msg "resetting $DEVICE..."
