@@ -2,7 +2,7 @@
  * DigitalIn/DigitalOut C++ wrappers for digitalRead and digitalWrite for Arduino,
  * based on the mbed library API.
  *
- * Copyright (C) 2018 Allen Wild <allenwild93@gmail.com>
+ * Copyright (C) 2018-2021 Allen Wild <allenwild93@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,41 +21,99 @@
 #ifndef DIGITALIO_H
 #define DIGITALIO_H
 
-#include <cstdint>
-#include "WInterrupts.h"
+#include "Arduino.h"
 
 class DigitalOut
 {
     public:
-        DigitalOut(uint32_t pin);
-        DigitalOut(uint32_t pin, int value);
+        DigitalOut(pin_size_t pin)
+            : DigitalOut(pin, LOW) {}
 
-        void write(int value);
-        int read(void);
+        DigitalOut(pin_size_t pin, int value)
+            : DigitalOut(pin, static_cast<PinStatus>(value)) {}
 
-        DigitalOut& operator= (int value);
-        DigitalOut& operator= (DigitalOut& rhs);
-        operator int();
+        DigitalOut(pin_size_t pin, PinStatus value)
+            : m_pin(pin)
+        {
+            pinMode(m_pin, OUTPUT);
+            this->write(value);
+        }
 
-    protected:
-        uint32_t _pin;
-        int _value;
+        inline void write(PinStatus value)
+        {
+            digitalWrite(m_pin, value);
+        }
+
+        inline void write(int value)
+        {
+            this->write(static_cast<PinStatus>(value));
+        }
+
+        inline PinStatus read() const
+        {
+            return digitalRead(m_pin);
+        }
+
+        inline DigitalOut& operator=(int value)
+        {
+            this->write(value);
+            return *this;
+        }
+
+        inline DigitalOut& operator=(PinStatus value)
+        {
+            this->write(value);
+            return *this;
+        }
+
+        inline operator bool()
+        {
+            return this->read() != LOW;
+        }
+
+    private:
+        pin_size_t m_pin;
 };
 
 class DigitalIn
 {
     public:
-        DigitalIn(uint32_t pin);
-        DigitalIn(uint32_t pin, uint32_t _mode);
-        int read(void);
-        void mode(uint32_t mode);
-        void add_interrupt(voidFuncPtr isr, uint32_t mode);
-        void remove_interrupt(void);
-        void set_interrupt_filter(bool filter);
-        operator int();
+        DigitalIn(pin_size_t pin)
+            : DigitalIn(pin, INPUT) {}
 
-    protected:
-        uint32_t _pin;
+        DigitalIn(pin_size_t pin, PinMode mode)
+            : m_pin(pin)
+        {
+            this->set_mode(mode);
+        }
+
+        inline PinStatus read()
+        {
+            return digitalRead(m_pin);
+        }
+
+        inline void set_mode(PinMode mode)
+        {
+            pinMode(m_pin, mode);
+        }
+
+        inline void add_interrupt(voidFuncPtr isr, PinStatus mode)
+        {
+            attachInterrupt(m_pin, isr, mode);
+        }
+
+        inline void remove_interrupt(void)
+        {
+            detachInterrupt(m_pin);
+        }
+
+        inline operator int()
+        {
+            return static_cast<int>(digitalRead(m_pin));
+        }
+
+    private:
+        pin_size_t m_pin;
 
 };
 
