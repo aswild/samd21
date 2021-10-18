@@ -24,6 +24,8 @@
 
 #include "MPR121.h"
 
+using arduino::TwoWire;
+
 MPR121::MPR121(TwoWire& _i2c, uint8_t _address) : i2c(_i2c), address(_address)
 {
     // nothing to do besides initialize private vars

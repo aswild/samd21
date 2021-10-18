@@ -1,7 +1,6 @@
 #include <ctype.h>
 
 #include "Arduino.h"
-#include "wiring_digital.h"
 
 #define DEBUG_PORT 0
 #define DEBUG_PIN  17

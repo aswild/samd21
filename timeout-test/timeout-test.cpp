@@ -50,7 +50,6 @@ void setup(void)
     timeout_init();
     timeout_set_callback(&timeout_isr);
 
-    button.mode(INPUT);
     button.add_interrupt(button_isr, FALLING);
     status_led = 0;
 

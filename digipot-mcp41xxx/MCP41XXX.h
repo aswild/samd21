@@ -21,7 +21,6 @@
 #define MCP41XXX_H
 
 #include "SPI.h"
-#include "wiring_digital.h"
 
 #define MCP41XXX_DEFAULT_CLOCK 4000000
 #define MCP41XXX_CMD_SETWIPER 0x1100

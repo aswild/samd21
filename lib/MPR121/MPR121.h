@@ -41,7 +41,7 @@ public:
     static const uint8_t ADD_SDA = 0x5d;
 
     // Real initialiser, takes the i2c address of the device.
-    MPR121(TwoWire& _i2c, uint8_t address=ADD_VSS);
+    MPR121(arduino::TwoWire& _i2c, uint8_t address=ADD_VSS);
 
     void init(bool i2cBegin=true);
 
@@ -67,7 +67,7 @@ protected:
 
 private:
     // The I2C bus instance.
-    TwoWire &i2c;
+    arduino::TwoWire &i2c;
 
     // 7 bit i2c address of this mpr121
     uint8_t address;
