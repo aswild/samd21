@@ -205,7 +205,7 @@ extern SERCOM sercom4;
 extern SERCOM sercom5;
 
 //extern Uart Serial;
-extern Uart Serial1;
+extern arduino::Uart Serial1;
 
 #endif
 

@@ -41,6 +41,7 @@ int SafeRingBufferN<N>::read_char() {
   synchronized {
     return RingBufferN<N>::read_char();
   }
+  return 0; // WILD: compiler can't know that the "synchronized" for loop will always hit the return
 }
 
 template <int N>

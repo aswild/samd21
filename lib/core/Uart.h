@@ -22,7 +22,7 @@
 #include "SERCOM.h"
 #include "SafeRingBuffer.h"
 
-#define SERIAL_BUFFER_SIZE  64
+namespace arduino {
 
 class Uart : public HardwareSerial
 {
@@ -44,9 +44,6 @@ class Uart : public HardwareSerial
 
     operator bool() { return true; }
 
-    void setRxBufferSize(int size);
-    void setTxBufferSize(int size);
-
   private:
     SERCOM *sercom;
     SafeRingBuffer rxBuffer;
@@ -66,3 +63,5 @@ class Uart : public HardwareSerial
     SercomUartCharSize extractCharSize(uint16_t config);
     SercomParityMode extractParity(uint16_t config);
 };
+
+}

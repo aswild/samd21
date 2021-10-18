@@ -20,6 +20,8 @@
 #include "wiring_private.h"
 #include "Uart.h"
 
+using namespace arduino;
+
 #define NO_RTS_PIN 255
 #define NO_CTS_PIN 255
 #define RTS_RX_THRESHOLD 10
@@ -188,16 +190,6 @@ size_t Uart::write(const uint8_t data)
   }
 
   return 1;
-}
-
-void Uart::setRxBufferSize(int size)
-{
-  rxBuffer.resize(size);
-}
-
-void Uart::setTxBufferSize(int size)
-{
-  txBuffer.resize(size);
 }
 
 SercomNumberStopBit Uart::extractNbStopBit(uint16_t config)

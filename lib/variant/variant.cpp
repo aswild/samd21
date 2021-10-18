@@ -106,6 +106,8 @@
 
 #include "variant.h"
 
+using namespace arduino;
+
 /*
  * Pins descriptions
  */
