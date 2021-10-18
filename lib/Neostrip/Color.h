@@ -35,9 +35,6 @@ typedef union __attribute__((packed)) {
     uint32_t i:24;
 
 #ifdef __cplusplus
-    Color(void) = default;
-    Color(int i) : i(i) {}
-
     Color& operator=(const Color& c) = default;
     Color& operator=(const int i)
     {

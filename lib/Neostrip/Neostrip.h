@@ -23,9 +23,9 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
+#include "api/Print.h"
 #include "Adafruit_ZeroDMA.h"
 #include "Color.h"
-#include "Print.h"
 #include "SPI.h"
 
 // define this before including bittable.h
@@ -204,7 +204,7 @@ class Neostrip
             return brightness - 1;
         }
 
-        void dump_rawcolors(Print& p)
+        void dump_rawcolors(arduino::Print& p)
         {
             for (size_t i = 0; i < N; i++)
             {
