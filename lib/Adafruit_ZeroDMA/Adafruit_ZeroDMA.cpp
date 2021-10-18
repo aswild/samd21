@@ -201,8 +201,12 @@ ZeroDMAstatus Adafruit_ZeroDMA::allocate(void) {
 		// Initialize descriptor list addresses
 		DMAC->BASEADDR.bit.BASEADDR = (uint32_t)_descriptor;
 		DMAC->WRBADDR.bit.WRBADDR   = (uint32_t)_writeback;
+// WILD: allow memset, GCC incorrectly thinks it's a nontrivial class
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
 		memset(_descriptor, 0, sizeof(_descriptor));
 		memset(_writeback , 0, sizeof(_writeback));
+#pragma GCC diagnostic pop
 
 		// Re-enable DMA controller with all priority levels
 		DMAC->CTRL.reg = DMAC_CTRL_DMAENABLE | DMAC_CTRL_LVLEN(0xF);

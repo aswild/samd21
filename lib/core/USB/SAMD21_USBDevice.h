@@ -167,12 +167,16 @@ private:
 	__attribute__((__aligned__(4)))	UsbDeviceDescriptor EP[USB_EPT_NUM];
 };
 
+// WILD: allow memset, GCC incorrectly thinks it's a nontrivial class
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
 void USBDevice_SAMD21G18x::reset() {
 	usb.CTRLA.bit.SWRST = 1;
 	memset(EP, 0, sizeof(EP));
 	while (usb.SYNCBUSY.bit.SWRST) {}
 	usb.DESCADD.reg = (uint32_t)(&EP);
 }
+#pragma GCC diagnostic pop
 
 void USBDevice_SAMD21G18x::calibrate() {
 	// Load Pad Calibration data from non-volatile memory
