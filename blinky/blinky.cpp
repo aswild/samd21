@@ -33,16 +33,22 @@ DigitalIn  button(10, INPUT_PULLDOWN);
 
 void setup()
 {
-    while (!SerialUSB);
-    SerialUSB.printf("%s\r\n", "Hello World");
+    //while (!SerialUSB);
+    SerialUSB.printf("%s\n", "Hello World");
     blue_led = 0;
 }
 
 void loop()
 {
+    static unsigned int ticks = 0;
+
     rx_led = !rx_led;
     tx_led = !tx_led;
-    //SerialUSB.printf("%s\r\n", "Hello World");
+
+    if ((++ticks % 4) == 0)
+    {
+        SerialUSB.printf("Tick %d\n", ticks / 4);
+    }
 
     if (button)
     {
