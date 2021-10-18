@@ -29,11 +29,11 @@ DigitalOut tx_led(PIN_LED_TXL, 0); // TX LED on pin 26, we use the predefined PI
 DigitalOut rx_led(PIN_LED_RXL, 1); // RX LED on pin 25, we use the predefined PIN_LED_RXL to make sure
 DigitalOut p11(11, 0);
 
-DigitalIn  button(10, INPUT_PULLUP);
+DigitalIn  button(10, INPUT_PULLDOWN);
 
 void setup()
 {
-    //while (!SerialUSB);
+    while (!SerialUSB);
     SerialUSB.printf("%s\r\n", "Hello World");
     blue_led = 0;
 }
@@ -42,13 +42,14 @@ void loop()
 {
     rx_led = !rx_led;
     tx_led = !tx_led;
+    //SerialUSB.printf("%s\r\n", "Hello World");
 
-    if (!button)
+    if (button)
     {
         rx_led = 1;
         tx_led = 1;
         p11 = 1;
-        initiateReset(500);
+        initiateReset(500, 0);
         while(true);
     }
 
