@@ -30,7 +30,7 @@ namespace arduino {
 // using a ring buffer (I think), in which head is the index of the location
 // to which to write the next incoming character and tail is the index of the
 // location from which to read.
-#define SERIAL_BUFFER_SIZE 64
+#define SERIAL_BUFFER_SIZE 256
 
 template <int N>
 class RingBufferN
