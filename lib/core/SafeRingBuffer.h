@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Arduino LLC.  All right reserved.
+  Copyright (c) 2020 Arduino.  All right reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -16,20 +16,41 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#pragma once
-
 #ifdef __cplusplus
-extern "C"{
-#endif
 
-//extern void itoa( int n, char s[] ) ;
+#ifndef _SAFE_RING_BUFFER_
+#define _SAFE_RING_BUFFER_
 
-extern char* itoa( int value, char *string, int radix ) ;
-extern char* ltoa( long value, char *string, int radix ) ;
-extern char* utoa( unsigned int value, char *string, int radix ) ;
-extern char* ultoa( unsigned long value, char *string, int radix ) ;
+#include <api/RingBuffer.h>
+#include "sync.h"
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
+namespace arduino {
 
+template <int N>
+class SafeRingBufferN : public RingBufferN<N>
+{
+  public:
+    int read_char();
+    void store_char( uint8_t c ) ;
+};
+
+typedef SafeRingBufferN<SERIAL_BUFFER_SIZE> SafeRingBuffer;
+
+template <int N>
+int SafeRingBufferN<N>::read_char() {
+  synchronized {
+    return RingBufferN<N>::read_char();
+  }
+}
+
+template <int N>
+void SafeRingBufferN<N>::store_char(uint8_t c) {
+  synchronized {
+    RingBufferN<N>::store_char(c);
+  }
+}
+
+}
+
+#endif /* _SAFE_RING_BUFFER_ */
+#endif /* __cplusplus */

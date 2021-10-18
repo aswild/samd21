@@ -29,28 +29,18 @@
 
 #if defined __cplusplus
 
-#include "Stream.h"
-#include "RingBuffer.h"
+#include "Arduino.h"
+#include "api/Stream.h"
+#include "api/RingBuffer.h"
+#include "api/USBAPI.h"
+#include "CDC.h"
+
+#if ARDUINO_API_VERSION > 10000
+using namespace arduino;
+#endif
 
 //================================================================================
 // USB
-
-// Low level API
-typedef struct {
-	union {
-		uint8_t bmRequestType;
-		struct {
-			uint8_t direction : 5;
-			uint8_t type : 2;
-			uint8_t transferDirection : 1;
-		};
-	};
-	uint8_t bRequest;
-	uint8_t wValueL;
-	uint8_t wValueH;
-	uint16_t wIndex;
-	uint16_t wLength;
-} USBSetup;
 
 class USBDeviceClass {
 public:
@@ -78,7 +68,7 @@ public:
 	uint32_t sendControl(int /* ep */, const void *data, uint32_t len) { return sendControl(data, len); }
 	uint32_t recvControl(void *data, uint32_t len);
 	uint32_t sendConfiguration(uint32_t maxlen);
-	bool sendStringDescriptor(const uint8_t *string, uint8_t maxlen);
+	bool sendStringDescriptor(const uint8_t *string, uint32_t maxlen);
 	void initControl(int end);
 	uint8_t SendInterfaces(uint32_t* total);
 	void packMessages(bool val);
@@ -86,7 +76,6 @@ public:
 	// Generic EndPoint API
 	void initEndpoints(void);
 	void initEP(uint32_t ep, uint32_t type);
-	void handleEndpoint(uint8_t ep);
 
 	uint32_t send(uint32_t ep, const void *data, uint32_t len);
 	void sendZlp(uint32_t ep);
@@ -94,11 +83,11 @@ public:
 	int recv(uint32_t ep);
 	uint32_t available(uint32_t ep);
 	void flush(uint32_t ep);
+	void clear(uint32_t ep);
 	void stall(uint32_t ep);
 
 	// private?
 	uint32_t armSend(uint32_t ep, const void *data, uint32_t len);
-	uint8_t armRecv(uint32_t ep);
 	uint8_t armRecvCtrlOUT(uint32_t ep);
 
 	void ISRHandler();
@@ -106,16 +95,15 @@ public:
 private:
 	bool initialized;
 };
-
 extern USBDeviceClass USBDevice;
 
 //================================================================================
 //	Serial over CDC (Serial1 is the physical port)
 
-class Serial_ : public Stream
+class Serial_ : public Stream, public arduino::PluggableUSBModule
 {
 public:
-	Serial_(USBDeviceClass &_usb) : usb(_usb), stalled(false) { }
+	Serial_(USBDeviceClass &_usb);
 	void begin(uint32_t baud_count);
 	void begin(unsigned long, uint8_t);
 	void end(void);
@@ -125,6 +113,7 @@ public:
 	virtual int peek(void);
 	virtual int read(void);
 	virtual void flush(void);
+	virtual void clear(void);
 	virtual size_t write(uint8_t);
 	virtual size_t write(const uint8_t *buffer, size_t size);
 	using Print::write; // pull in write(str) from Print
@@ -171,33 +160,25 @@ public:
 		SPACE_PARITY = 4,
 	};
 
+protected:
+    // Implementation of the PUSBListNode
+    int getInterface(uint8_t* interfaceNum);
+    int getDescriptor(USBSetup& setup);
+    bool setup(USBSetup& setup);
+    uint8_t getShortName(char* name);
+    void handleEndpoint(int ep);
+    void enableInterrupt();
+
+friend USBDeviceClass;
+
 private:
 	int availableForStore(void);
 
 	USBDeviceClass &usb;
-	RingBuffer *_cdc_rx_buffer;
 	bool stalled;
+	unsigned int epType[3];
+
 };
 extern Serial_ SerialUSB;
-
-//================================================================================
-//================================================================================
-//	MSC 'Driver'
-
-uint32_t		MSC_GetInterface(uint8_t* interfaceNum);
-uint32_t		MSC_GetDescriptor(uint32_t i);
-bool	MSC_Setup(USBSetup& setup);
-bool	MSC_Data(uint8_t rx,uint8_t tx);
-
-//================================================================================
-//================================================================================
-//	CDC 'Driver'
-
-int CDC_GetInterface(uint8_t* interfaceNum);
-const void* _CDC_GetInterface(void);
-uint32_t _CDC_GetInterfaceLength(void);
-uint32_t		CDC_GetOtherInterface(uint8_t* interfaceNum);
-uint32_t		CDC_GetDescriptor(uint32_t i);
-bool	CDC_Setup(USBSetup& setup);
 
 #endif  // __cplusplus
