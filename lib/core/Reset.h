@@ -26,6 +26,8 @@ void initiateReset(int ms, int bootloaderReset);
 void tickReset();
 void cancelReset();
 
+ __attribute__ ((weak)) void resetExternalChip() {};
+
 #ifdef __cplusplus
 }
 #endif

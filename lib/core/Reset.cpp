@@ -88,6 +88,7 @@ reset:
 static int ticks = -1;
 
 void initiateReset(int _ticks, int _bootloaderReset) {
+	resetExternalChip();
 	bootloaderReset = static_cast<bool>(_bootloaderReset);
 	ticks = _ticks;
 }
