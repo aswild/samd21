@@ -56,12 +56,13 @@ OBJDIR      = obj
 CORE        = core
 
 # all these directories will be used as CPP include paths, and
-# all c/cpp/S sources will be compiled into libcore
-LIBRARIES   = variant $(CORE) $(CORE)/USB
+# all c/cpp/S sources will be compiled into libcore. However, we don't use -Ilib/core/api, all the API
+# header files are expected to be included as "api/Foo.h".
+LIBRARIES   = variant $(CORE) $(CORE)/api $(CORE)/USB
 LIBRARIES  += Adafruit_FreeTouch Adafruit_ZeroDMA DigitalIO MPR121 Neostrip PWM SPI Timeout Timer Wire
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
-COREINCS    = $(addprefix -I,$(CORESRCDIRS))
+COREINCS    = $(addprefix -I,$(filter-out lib/$(CORE)/api,$(CORESRCDIRS)))
 
 VARIANT_DIR = lib/variant
 CMSIS_DIR   = lib/CMSIS
