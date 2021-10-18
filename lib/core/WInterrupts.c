@@ -201,7 +201,7 @@ void EIC_Handler(void)
 /*
  * \brief enable or disable majority vote filter
  */
-void setInterruptFilter(uint32_t pin, bool filter)
+void setInterruptFilter(pin_size_t pin, bool filter)
 {
   uint32_t config;
   uint32_t pos;

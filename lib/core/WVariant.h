@@ -19,8 +19,11 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <samd.h>
+
+#include "api/Common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -214,6 +217,9 @@ typedef struct _PinDescription
 /* Pins table to be instantiated into variant.cpp */
 extern const PinDescription g_APinDescription[] ;
 extern const size_t g_APinDescriptionLength;
+
+/* enable majority vote filter for a PIO interrupt */
+extern void setInterruptFilter(pin_size_t pin, bool filter);
 
 /* Generic Clock Multiplexer IDs */
 #define GCM_DFLL48M_REF           (0x00U)

@@ -107,6 +107,11 @@ class DigitalIn
             detachInterrupt(m_pin);
         }
 
+        inline void set_interrupt_filter(bool filter)
+        {
+            setInterruptFilter(m_pin, filter);
+        }
+
         inline operator int()
         {
             return static_cast<int>(digitalRead(m_pin));
