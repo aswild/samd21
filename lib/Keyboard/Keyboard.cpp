@@ -27,7 +27,7 @@
 //================================================================================
 //  Keyboard
 
-static const uint8_t _hidReportDescriptor[] PROGMEM = {
+static const uint8_t _hidReportDescriptor[] = {
 
     //  Keyboard
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)  // 47
@@ -79,11 +79,8 @@ void Keyboard_::sendReport(KeyReport* keys)
     HID().SendReport(2,keys,sizeof(KeyReport));
 }
 
-extern
-const uint8_t _asciimap[128] PROGMEM;
-
 #define SHIFT 0x80
-const uint8_t _asciimap[128] =
+static const uint8_t _asciimap[128] =
 {
     0x00,             // NUL
     0x00,             // SOH
@@ -232,12 +229,12 @@ size_t Keyboard_::press(uint8_t k)
         _keyReport.modifiers |= (1<<(k-128));
         k = 0;
     } else {                // it's a printing key
-        k = pgm_read_byte(_asciimap + k);
+        k = _asciimap[k];
         if (!k) {
             setWriteError();
             return 0;
         }
-        if (k & 0x80) {                     // it's a capital letter or other character reached with shift
+        if (k & SHIFT) {                     // it's a capital letter or other character reached with shift
             _keyReport.modifiers |= 0x02;   // the left shift modifier
             k &= 0x7F;
         }
@@ -276,11 +273,11 @@ size_t Keyboard_::release(uint8_t k)
         _keyReport.modifiers &= ~(1<<(k-128));
         k = 0;
     } else {                // it's a printing key
-        k = pgm_read_byte(_asciimap + k);
+        k = _asciimap[k];
         if (!k) {
             return 0;
         }
-        if (k & 0x80) {                         // it's a capital letter or other character reached with shift
+        if (k & SHIFT) {                         // it's a capital letter or other character reached with shift
             _keyReport.modifiers &= ~(0x02);    // the left shift modifier
             k &= 0x7F;
         }
@@ -332,6 +329,12 @@ size_t Keyboard_::write(const uint8_t *buffer, size_t size) {
     return n;
 }
 
-Keyboard_ Keyboard;
+// WILD: replacement for singleton so the object isn't constructed until it's used, rather than
+// before main() during __libc_init_array(). The HID class does it this way too
+Keyboard_& Keyboard()
+{
+    static Keyboard_ inst;
+    return inst;
+}
 
 #endif

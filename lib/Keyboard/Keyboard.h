@@ -84,19 +84,21 @@
 #define KEY_F24           0xFB
 
 
-// Low level key report: up to 6 keys and shift, ctrl etc at once
-typedef struct
-{
-  uint8_t modifiers;
-  uint8_t reserved;
-  uint8_t keys[6];
-} KeyReport;
 
 class Keyboard_ : public Print
 {
 private:
+  // Low level key report: up to 6 keys and shift, ctrl etc at once
+  struct KeyReport
+  {
+    uint8_t modifiers;
+    uint8_t reserved;
+    uint8_t keys[6];
+  };
+
   KeyReport _keyReport;
   void sendReport(KeyReport* keys);
+
 public:
   Keyboard_(void);
   void begin(void);
@@ -107,7 +109,10 @@ public:
   size_t release(uint8_t k);
   void releaseAll(void);
 };
-extern Keyboard_ Keyboard;
+
+// WILD: replacement for singleton so the object isn't constructed until it's used, rather than
+// before main() during __libc_init_array(). The HID class does it this way too
+extern Keyboard_& Keyboard();
 
 #endif
 #endif

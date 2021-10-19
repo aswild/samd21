@@ -28,7 +28,7 @@ static void led_pulse()
 void setup()
 {
     SerialUSB.begin(115200);
-    Keyboard.begin();
+    Keyboard().begin();
 
     btn1.add_interrupt([] { btn1_pressed = true; }, RISING);
     btn2.add_interrupt([] { btn2_pressed = true; }, RISING);
@@ -55,8 +55,8 @@ void loop()
 
         led_pulse();
         SerialUSB.write("B2\n");
-        Keyboard.press(key);
-        Keyboard.release(key);
+        Keyboard().press(key);
+        Keyboard().release(key);
         btn2_pressed = false;
     }
 
