@@ -29,7 +29,7 @@ extern "C" {
 // Includes Atmel CMSIS
 #include <samd.h>
 
-int pinPeripheral( uint32_t ulPin, EPioType ulPeripheral );
+int pinPeripheral(pin_size_t api_pin, EPioType peripheral);
 
 #ifdef __cplusplus
 } // extern "C"
