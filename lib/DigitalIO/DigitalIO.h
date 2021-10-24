@@ -49,6 +49,11 @@ class DigitalOut
             this->write(static_cast<PinStatus>(value));
         }
 
+        inline void toggle()
+        {
+            this->write(!this->read());
+        }
+
         inline PinStatus read() const
         {
             return digitalRead(m_pin);
