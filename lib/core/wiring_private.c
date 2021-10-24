@@ -24,9 +24,8 @@ int pinPeripheral(pin_size_t api_pin, EPioType peripheral)
     if (api_pin >= g_APinDescriptionLength)
         return -1;
 
-    const PinDescription *desc = &g_APinDescription[api_pin];
-    const EPortType port = desc->ulPort;
-    const uint32_t pin = desc->ulPin;
+    const EPortType port = g_APinDescription[api_pin].ulPort;
+    const uint32_t pin = g_APinDescription[api_pin].ulPin;
 
     switch (peripheral)
     {

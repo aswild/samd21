@@ -18,107 +18,68 @@
 
 #include "Arduino.h"
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
-void pinMode( pin_size_t ulPin, PinMode ulMode )
+void pinMode(pin_size_t api_pin, PinMode mode)
 {
-  // Handle the case the pin isn't usable as PIO
-  if ( g_APinDescription[ulPin].ulPinType == PIO_NOT_A_PIN )
-  {
-    return ;
-  }
+    if ((api_pin >= g_APinDescriptionLength) || (g_APinDescription[api_pin].ulPinType == PIO_NOT_A_PIN))
+        return;
 
-  // Set pin mode according to chapter '22.6.3 I/O Pin Configuration'
-  switch ( ulMode )
-  {
-    case INPUT:
-      // Set pin to input mode
-      PORT->Group[g_APinDescription[ulPin].ulPort].PINCFG[g_APinDescription[ulPin].ulPin].reg=(uint8_t)(PORT_PINCFG_INEN) ;
-      PORT->Group[g_APinDescription[ulPin].ulPort].DIRCLR.reg = (uint32_t)(1<<g_APinDescription[ulPin].ulPin) ;
-    break ;
+    const EPortType port = g_APinDescription[api_pin].ulPort;
+    const uint32_t pin = g_APinDescription[api_pin].ulPin;
 
-    case INPUT_PULLUP:
-      // Set pin to input mode with pull-up resistor enabled
-      PORT->Group[g_APinDescription[ulPin].ulPort].PINCFG[g_APinDescription[ulPin].ulPin].reg=(uint8_t)(PORT_PINCFG_INEN|PORT_PINCFG_PULLEN) ;
-      PORT->Group[g_APinDescription[ulPin].ulPort].DIRCLR.reg = (uint32_t)(1<<g_APinDescription[ulPin].ulPin) ;
+    switch (mode)
+    {
+        case INPUT:
+            // enable input buffer, disable pull
+            PORT->Group[port].PINCFG[pin].reg = PORT_PINCFG_INEN;
+            // set direction to input
+            PORT->Group[port].DIRCLR.reg = 1 << pin;
+            break;
 
-      // Enable pull level (cf '22.6.3.2 Input Configuration' and '22.8.7 Data Output Value Set')
-      PORT->Group[g_APinDescription[ulPin].ulPort].OUTSET.reg = (uint32_t)(1<<g_APinDescription[ulPin].ulPin) ;
-    break ;
+        case INPUT_PULLUP:
+            PORT->Group[port].PINCFG[pin].reg = PORT_PINCFG_INEN | PORT_PINCFG_PULLEN;
+            PORT->Group[port].DIRCLR.reg = 1 << pin;
+            // output value is used for pull direction, cf '22.6.3.2 Input Configuration'
+            PORT->Group[port].OUTSET.reg = 1 << pin;
+            break;
 
-    case INPUT_PULLDOWN:
-      // Set pin to input mode with pull-down resistor enabled
-      PORT->Group[g_APinDescription[ulPin].ulPort].PINCFG[g_APinDescription[ulPin].ulPin].reg=(uint8_t)(PORT_PINCFG_INEN|PORT_PINCFG_PULLEN) ;
-      PORT->Group[g_APinDescription[ulPin].ulPort].DIRCLR.reg = (uint32_t)(1<<g_APinDescription[ulPin].ulPin) ;
+        case INPUT_PULLDOWN:
+            PORT->Group[port].PINCFG[pin].reg = PORT_PINCFG_INEN | PORT_PINCFG_PULLEN;
+            PORT->Group[port].DIRCLR.reg = 1 << pin;
+            PORT->Group[port].OUTCLR.reg = 1 << pin;
+            break;
 
-      // Enable pull level (cf '22.6.3.2 Input Configuration' and '22.8.6 Data Output Value Clear')
-      PORT->Group[g_APinDescription[ulPin].ulPort].OUTCLR.reg = (uint32_t)(1<<g_APinDescription[ulPin].ulPin) ;
-    break ;
+        case OUTPUT:
+            // enable input buffer so we can still read the pin state
+            PORT->Group[port].PINCFG[pin].reg = PORT_PINCFG_INEN;
+            // set to output mode
+            PORT->Group[port].DIRSET.reg = 1 << pin;
+            break;
 
-    case OUTPUT:
-      // enable input, to support reading back values, with pullups disabled
-      PORT->Group[g_APinDescription[ulPin].ulPort].PINCFG[g_APinDescription[ulPin].ulPin].reg=(uint8_t)(PORT_PINCFG_INEN) ;
-
-      // Set pin to output mode
-      PORT->Group[g_APinDescription[ulPin].ulPort].DIRSET.reg = (uint32_t)(1<<g_APinDescription[ulPin].ulPin) ;
-    break ;
-
-    default:
-      // do nothing
-    break ;
-  }
+        default:
+            // shouldn't get here
+            break;
+    }
 }
 
-void digitalWrite( pin_size_t ulPin, PinStatus ulVal )
+void digitalWrite(pin_size_t api_pin, PinStatus val)
 {
-  // Handle the case the pin isn't usable as PIO
-  if ( g_APinDescription[ulPin].ulPinType == PIO_NOT_A_PIN )
-  {
-    return ;
-  }
+    // Unchecked! For speed, assume that the pin is valid. The mode must already be configured.
+    // If this pin is an input with pullup/pulldown enabled, this will change the pull direction
+    // as a side effect of how PIO works on SAMD21.
+    const EPortType port = g_APinDescription[api_pin].ulPort;
+    const uint32_t pin = g_APinDescription[api_pin].ulPin;
 
-  EPortType port = g_APinDescription[ulPin].ulPort;
-  uint32_t pin = g_APinDescription[ulPin].ulPin;
-  uint32_t pinMask = (1ul << pin);
-
-  if ( (PORT->Group[port].DIRSET.reg & pinMask) == 0 ) {
-    // the pin is not an output, disable pull-up if val is LOW, otherwise enable pull-up
-    PORT->Group[port].PINCFG[pin].bit.PULLEN = ((ulVal == LOW) ? 0 : 1) ;
-  }
-
-  switch ( ulVal )
-  {
-    case LOW:
-      PORT->Group[port].OUTCLR.reg = pinMask;
-    break ;
-
-    default:
-      PORT->Group[port].OUTSET.reg = pinMask;
-    break ;
-  }
-
-  return ;
+    if (val == LOW)
+        PORT->Group[port].OUTCLR.reg = 1 << pin;
+    else if (val == HIGH)
+        PORT->Group[port].OUTSET.reg = 1 << pin;
 }
 
-PinStatus digitalRead( pin_size_t ulPin )
+PinStatus digitalRead(pin_size_t api_pin)
 {
-  // Handle the case the pin isn't usable as PIO
-  if ( g_APinDescription[ulPin].ulPinType == PIO_NOT_A_PIN )
-  {
-    return LOW ;
-  }
+    // Unchecked! For speed, assume that the pin is valid. The mode must already be configured.
+    const EPortType port = g_APinDescription[api_pin].ulPort;
+    const uint32_t pin = g_APinDescription[api_pin].ulPin;
 
-  if ( (PORT->Group[g_APinDescription[ulPin].ulPort].IN.reg & (1ul << g_APinDescription[ulPin].ulPin)) != 0 )
-  {
-    return HIGH ;
-  }
-
-  return LOW ;
+    return (PORT->Group[port].IN.reg & (1 << pin)) ? HIGH : LOW;
 }
-
-#ifdef __cplusplus
-}
-#endif
-
