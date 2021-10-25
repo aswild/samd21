@@ -242,7 +242,7 @@ uint8_t Adafruit_I2CDevice::address(void) { return _addr; }
  *    Not necessarily that the speed was achieved!
  */
 bool Adafruit_I2CDevice::setSpeed(uint32_t desiredclk) {
-#if (ARDUINO >= 157) && !defined(ARDUINO_STM32_FEATHER) && !defined(TinyWireM_h)
+#if !defined(ARDUINO_STM32_FEATHER) && !defined(TinyWireM_h)
   _wire->setClock(desiredclk);
   return true;
 #else
