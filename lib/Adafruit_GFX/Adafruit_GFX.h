@@ -1,12 +1,7 @@
 #ifndef _ADAFRUIT_GFX_H
 #define _ADAFRUIT_GFX_H
 
-#if ARDUINO >= 100
 #include "Arduino.h"
-#include "Print.h"
-#else
-#include "WProgram.h"
-#endif
 #include "gfxfont.h"
 
 /// A generic graphics superclass that can handle all sorts of drawing. At a
@@ -178,11 +173,7 @@ public:
   void cp437(bool x = true) { _cp437 = x; }
 
   using Print::write;
-#if ARDUINO >= 100
   virtual size_t write(uint8_t);
-#else
-  virtual void write(uint8_t);
-#endif
 
   /************************************************************************/
   /*!
