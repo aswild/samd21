@@ -59,7 +59,7 @@ CORE        = core
 # all c/cpp/S sources will be compiled into libcore. However, we don't use -Ilib/core/api, all the API
 # header files are expected to be included as "api/Foo.h".
 LIBRARIES   = variant $(CORE) $(CORE)/api $(CORE)/USB
-LIBRARIES  += Adafruit_BusIO Adafruit_FreeTouch Adafruit_GFX Adafruit_ZeroDMA
+LIBRARIES  += Adafruit_BusIO Adafruit_FreeTouch Adafruit_GFX Adafruit_SH110X Adafruit_ZeroDMA
 LIBRARIES  += DigitalIO HID Keyboard MPR121 Neostrip PWM SPI Timeout Timer Wire
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
