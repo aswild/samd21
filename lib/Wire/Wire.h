@@ -41,6 +41,10 @@ class TwoWire : public HardwareI2C
     void end();
     void setClock(uint32_t);
 
+    // disable calls to pinPeripheral in begin(). This method must be called before begin(),
+    // in which case the caller is responsible for setting up pinmux configuration.
+    inline void noPinPeripheral() { _noPinPeripheral = true; }
+
     void beginTransmission(uint8_t);
     uint8_t endTransmission(bool stopBit);
     uint8_t endTransmission(void);
@@ -70,6 +74,7 @@ class TwoWire : public HardwareI2C
     SERCOM * sercom;
     uint8_t _uc_pinSDA;
     uint8_t _uc_pinSCL;
+    bool _noPinPeripheral;
 
     bool transmissionBegun;
 

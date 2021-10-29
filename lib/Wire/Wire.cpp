@@ -41,8 +41,10 @@ void TwoWire::begin(void) {
   sercom->initMasterWIRE(TWI_CLOCK);
   sercom->enableWIRE();
 
-  pinPeripheral(_uc_pinSDA, g_APinDescription[_uc_pinSDA].ulPinType);
-  pinPeripheral(_uc_pinSCL, g_APinDescription[_uc_pinSCL].ulPinType);
+  if (!_noPinPeripheral) {
+    pinPeripheral(_uc_pinSDA, g_APinDescription[_uc_pinSDA].ulPinType);
+    pinPeripheral(_uc_pinSCL, g_APinDescription[_uc_pinSCL].ulPinType);
+  }
 }
 
 void TwoWire::begin(uint8_t address, bool enableGeneralCall) {
@@ -50,8 +52,10 @@ void TwoWire::begin(uint8_t address, bool enableGeneralCall) {
   sercom->initSlaveWIRE(address, enableGeneralCall);
   sercom->enableWIRE();
 
-  pinPeripheral(_uc_pinSDA, g_APinDescription[_uc_pinSDA].ulPinType);
-  pinPeripheral(_uc_pinSCL, g_APinDescription[_uc_pinSCL].ulPinType);
+  if (!_noPinPeripheral) {
+    pinPeripheral(_uc_pinSDA, g_APinDescription[_uc_pinSDA].ulPinType);
+    pinPeripheral(_uc_pinSCL, g_APinDescription[_uc_pinSCL].ulPinType);
+  }
 }
 
 void TwoWire::setClock(uint32_t baudrate) {
@@ -145,11 +149,11 @@ uint8_t TwoWire::endTransmission(bool stopBit)
       return 3 ;  // Nack or error
     }
   }
-  
+
   if (stopBit)
   {
     sercom->prepareCommandBitsWire(WIRE_MASTER_ACT_STOP);
-  }   
+  }
 
   return 0;
 }
@@ -221,7 +225,7 @@ void TwoWire::onService(void)
 {
   if ( sercom->isSlaveWIRE() )
   {
-    if(sercom->isStopDetectedWIRE() || 
+    if(sercom->isStopDetectedWIRE() ||
         (sercom->isAddressMatch() && sercom->isRestartDetectedWIRE() && !sercom->isMasterReadOperationWIRE())) //Stop or Restart detected
     {
       sercom->prepareAckBitWIRE();
@@ -232,7 +236,7 @@ void TwoWire::onService(void)
       {
         onReceiveCallback(available());
       }
-      
+
       rxBuffer.clear();
     }
     else if(sercom->isAddressMatch())  //Address Match
@@ -266,12 +270,12 @@ void TwoWire::onService(void)
         transmissionBegun = sercom->sendDataSlaveWIRE(c);
       } else { //Received data
         if (rxBuffer.isFull()) {
-          sercom->prepareNackBitWIRE(); 
+          sercom->prepareNackBitWIRE();
         } else {
           //Store data
           rxBuffer.store_char(sercom->readDataWIRE());
 
-          sercom->prepareAckBitWIRE(); 
+          sercom->prepareAckBitWIRE();
         }
 
         sercom->prepareCommandBitsWire(0x03);
