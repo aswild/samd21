@@ -66,7 +66,7 @@ void AC_Handler()
 {
     if (AC->INTFLAG.bit.COMP0)
     {
-        digitalWrite(10, !!(AC->STATUSA.bit.STATE0));
+        blue_led = AC->STATUSA.bit.STATE0;
     }
 
     // clear all interrupt flags
@@ -76,15 +76,10 @@ void AC_Handler()
 void setup()
 {
     init_ac();
-    pinMode(10, OUTPUT);
-    digitalWrite(10, LOW);
+    blue_led = 0;
 }
 
 void loop()
 {
-    blue_led.toggle();
-    //blue_led = !blue_led;
-    //blue_led = AC->STATUSA.bit.STATE0;
-    //blue_led = AC->STATUSC.bit.STATE0;
-    delay(500);
+    __WFI();
 }
