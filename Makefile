@@ -273,11 +273,11 @@ newsketch:
 
 .PHONY: dis
 dis: $(TARGET_ELF)
-	@$(OBJDUMP) -d $(TARGET_ELF)
+	@$(OBJDUMP) -dC $(TARGET_ELF)
 
 .PHONY: disvim
 disvim: $(TARGET_ELF)
-	$(OBJDUMP) -d $(TARGET_ELF) | vim -R -c ':set ft=asm' -
+	$(OBJDUMP) -dC $(TARGET_ELF) | vim -R -c ':set ft=asm' -
 
 .PHONY: hex
 hex: $(TARGET_HEX)
