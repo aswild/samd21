@@ -42,24 +42,30 @@ void setup(void)
     Adafruit_SH1107& d = display;
     d.clearDisplay();
     d.setRotation(3);
-    d.setTextSize(2);
     d.setTextColor(SH110X_WHITE);
+#if 1
+    d.setTextSize(1);
     d.setCursor(0, 0);
-    //d.print("0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        "0123456789ABCDEFGHIJK\n"
-    //        );
+    d.print(
+        "Mode:  Spacebar      "
+        "Shots: 10            "
+        "Hold:  100ms         "
+        "Intvl: 100ms         "
+        "                     "
+        "Avg: 1.234ms         "
+        "Min-Max 0.978-10.324 "
+        "Stdev: 0.022         "
+    );
+#else
+    d.setTextSize(2);
+    d.setCursor(0, 0);
     d.print(
         "          \n"
         "MEOW MEOW \n"
         "BITCHES :3\n"
         "          \n"
         );
+#endif
 
     d.display();
 }
