@@ -113,6 +113,9 @@ else
 SOURCE_VERSION_FLAG =
 endif
 
+# Sketches can set PRINTF_FLOAT=1 to build with this option (adds 12kB)
+PRINTF_FLOAT_FLAG = -Wl,--require-defined=_printf_float
+
 LCPPFLAGS   = -D__SAMD21G18A__ -DUSBCON $(SOURCE_VERSION_FLAG)
 LCPPFLAGS  += -I$(SKETCH) $(COREINCS) -I$(CMSIS_DIR)/Include -I$(SAM_DIR)
 LCPPFLAGS  += -MMD -MP
@@ -140,6 +143,7 @@ LASFLAGS    = $(CCXXFLAGS)
 
 LDSCRIPT   ?= $(VARIANT_DIR)/linker_scripts/gcc/flash_with_bootloader.ld
 LLDFLAGS    = $(CPUFLAGS) -fuse-linker-plugin --specs=nano.specs --specs=nosys.specs
+LLDFLAGS   += $(if $(filter $(PRINTF_FLOAT),1), $(PRINTF_FLOAT_FLAG))
 LLDFLAGS   += -Wl,--cref -Wl,--check-sections -Wl,--gc-sections -Wl,--unresolved-symbols=report-all
 LLDFLAGS   += -Wl,--warn-common -Wl,--warn-section-align
 LLDFLAGS   += -Wl,-Map=$(OBJDIR)/$(TARGET).map
