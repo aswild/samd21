@@ -60,7 +60,7 @@ CORE        = core
 # header files are expected to be included as "api/Foo.h".
 LIBRARIES   = variant $(CORE) $(CORE)/api $(CORE)/USB
 LIBRARIES  += Adafruit_BusIO Adafruit_FreeTouch Adafruit_GFX Adafruit_SH110X Adafruit_ZeroDMA
-LIBRARIES  += DigitalIO HID Keyboard MPR121 Neostrip PWM SPI Timeout Timer Wire
+LIBRARIES  += DigitalIO HID Keyboard MPR121 Neostrip PWM RotaryEncoder SPI Timeout Timer Wire
 
 CORESRCDIRS = $(addprefix lib/,$(LIBRARIES))
 COREINCS    = $(addprefix -I,$(filter-out lib/$(CORE)/api,$(CORESRCDIRS)))
