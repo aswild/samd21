@@ -48,9 +48,9 @@ project, then adapted the parts I need into my own Makefile.
 - variant files only
 
 ### lib/CMSIS
-- ARM CMSIS 5.4.0
+- ARM CMSIS 5.8.0
 - https://github.com/ARM-software/CMSIS_5
-- just the Include directory, and Lib/GCC/libarm_cortexM0l_math.a
+- Just the CMSIS/Core/Include directory
 
 ### lib/CMSIS-Atmel
 - https://github.com/arduino/ArduinoModule-CMSIS-Atmel

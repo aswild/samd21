@@ -150,7 +150,7 @@ LLDFLAGS   += -Wl,-Map=$(OBJDIR)/$(TARGET).map
 LLDFLAGS   += -L$(OBJDIR) -L$(CMSIS_DIR)
 
 CORELIB     = $(OBJDIR)/libcore.a
-LLIBS       = -lcore -lm -larm_cortexM0l_math
+LLIBS       = -lcore -lm
 
 ifeq ($(CLANG),1)
 $(info >>> Building with clang!)
